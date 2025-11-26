@@ -61,7 +61,7 @@ class Question(IntEnum):
 
 # Q1's possible goals
 class Goal(IntEnum):
-    FIND_CLEAN = 0              # Want to pick an uncontaminated vial 
+    FIND_UNCONTAMINATED = 0     # Want to pick an uncontaminated vial
     AVOID_CONTAMINATION = 1     # Want to avoid contaminated vials 
 
 
@@ -94,8 +94,8 @@ def vial_uncontaminated(w, i):
 def world_prior(w):
     """Prior P(w) under i.i.d. Bernoulli contamination model."""
     bits = np.array([(w >> i) & 1 for i in range(N_VIALS)])
-    p_clean = 1.0 - CONTAMINATION_RATE
-    return np.prod(np.where(bits, p_clean, CONTAMINATION_RATE))
+    p_uncontaminated = 1.0 - CONTAMINATION_RATE
+    return np.prod(np.where(bits, p_uncontaminated, CONTAMINATION_RATE))
 
 
 @memo
@@ -120,12 +120,12 @@ def get_speaker_belief(w, n_cont, n_uncont, p_conf):
     """
     bits = np.array([(w >> i) & 1 for i in range(N_VIALS)])
     indices = np.arange(N_VIALS)
-    p_clean = np.where(
+    p_uncontaminated = np.where(
         indices < n_cont,
         1.0 - p_conf,
         np.where(indices < n_cont + n_uncont, p_conf, 0.5)
     )
-    return np.prod(np.where(bits, p_clean, 1.0 - p_clean))
+    return np.prod(np.where(bits, p_uncontaminated, 1.0 - p_uncontaminated))
 
 
 @jax.jit
@@ -160,15 +160,10 @@ def R0[q: Question, k: KnowledgeConfig, r: Response]():
 # =============================================================================
 
 @jax.jit
-def knowledge_prior(k):
-    """Q1's prior over R0's knowledge configs (uniform)."""
-    return 1.0
-
-@jax.jit
 def action_utility(g, w, a):
     """Utility of picking vial a in world w for goal g."""
-    is_clean = vial_uncontaminated(w, a)
-    return np.where(g == Goal.FIND_CLEAN, is_clean, 1 - is_clean)
+    is_uncontaminated = vial_uncontaminated(w, a)
+    return np.where(g == Goal.FIND_UNCONTAMINATED, is_uncontaminated, 1 - is_uncontaminated)
 
 def DPValue(g, q, r):
     """Value of decision problem after hearing response r to question q."""
@@ -187,7 +182,7 @@ def Q1[g: Goal, q: Question]():
     questioner: knows(g)
     questioner: chooses(q in Question, wpp=exp({ALPHA_Q} * imagine[
         scenario: knows(q),
-        scenario: given(k in KnowledgeConfig, wpp=knowledge_prior(k)),
+        scenario: given(k in KnowledgeConfig, wpp=1),
         scenario: chooses(r in Response, wpp=R0[q, k, r]()),
         E[DPValue(g, scenario.q, scenario.r)]
     ]))
@@ -223,14 +218,14 @@ def print_confidence_scaling():
     original = P_CONFIDENT
 
     print("\nQ1's preferences by R0 confidence level:")
-    print(f"  {'P_CONFIDENT':<12} {'FIND_CLEAN':<20} {'AVOID_CONTAM':<20}")
+    print(f"  {'P_CONFIDENT':<12} {'FIND_UNCONTAM':<20} {'AVOID_CONTAM':<20}")
     print(f"  {'':12} {'P(Which uncont?)':<20} {'P(Which cont?)':<20}")
     print("  " + "-" * 52)
 
     for p_conf in [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]:
         P_CONFIDENT = p_conf
         q1 = Q1()
-        p_find = float(q1[Goal.FIND_CLEAN, Question.WHICH_UNCONTAMINATED])
+        p_find = float(q1[Goal.FIND_UNCONTAMINATED, Question.WHICH_UNCONTAMINATED])
         p_avoid = float(q1[Goal.AVOID_CONTAMINATION, Question.WHICH_CONTAMINATED])
         print(f"  {p_conf:<12.2f} {p_find:<20.3f} {p_avoid:<20.3f}")
 
