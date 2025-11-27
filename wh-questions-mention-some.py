@@ -71,10 +71,19 @@ class Goal(IntEnum):
 
 @jax.jit
 def meaning(q, r, w):
-    """Is response r true in world w for question q? (r must be subset of queried vials)"""
+    """
+    Is response r true in world w for question q?
+
+    For r > 0 (mention-some): r must be subset of queried vials
+    For r = 0 ("none"): asserts the queried set is empty
+
+    E.g., "Which contaminated?" -> "None" is only true if NO vials are contaminated.
+    """
     all_vials = (1 << N_VIALS) - 1
     queried = np.where(q == Question.WHICH_UNCONTAMINATED, w, all_vials ^ w)
-    return (r & queried) == r
+    # r > 0: mention-some (r is subset of queried)
+    # r = 0: exhaustive "none" (queried set is empty)
+    return np.where(r > 0, (r & queried) == r, queried == 0)
 
 
 @jax.jit
@@ -87,7 +96,7 @@ def vial_uncontaminated(w, i):
 
 
 # =============================================================================
-# L0: Literal Listener
+# R0: Respondent with Partial Knowledge
 # =============================================================================
 
 @jax.jit
@@ -96,19 +105,6 @@ def world_prior(w):
     bits = np.array([(w >> i) & 1 for i in range(N_VIALS)])
     p_uncontaminated = 1.0 - CONTAMINATION_RATE
     return np.prod(np.where(bits, p_uncontaminated, CONTAMINATION_RATE))
-
-
-@memo
-def L0[q: Question, r: Response, w: World]():
-    """Literal listener: P(w | q, r) via Bayesian update."""
-    listener: knows(q, r)
-    listener: chooses(w in World, wpp=meaning(q, r, w) * world_prior(w))
-    return Pr[listener.w == w]
-
-
-# =============================================================================
-# R0: Respondent with Partial Knowledge
-# =============================================================================
 
 @jax.jit
 def get_speaker_belief(w, n_cont, n_uncont, p_conf):
@@ -141,16 +137,17 @@ def response_length(r):
 
 @memo
 def R0[q: Question, k: KnowledgeConfig, r: Response]():
-    """Speaker chooses response to minimize KL(L0's posterior || own beliefs) + length cost."""
+    """Speaker chooses response to minimize KL(literal interpretation || own beliefs) + length cost."""
     speaker: knows(q, k)
     speaker: thinks[
         world: knows(k),
         world: chooses(w in World, wpp=get_speaker_belief(w, get_n_cont(k), get_n_uncont(k), {P_CONFIDENT}))
     ]
     speaker: chooses(r in Response, wpp=exp({ALPHA_R} * imagine[
-        listener: knows(q, r),
-        listener: chooses(w in World, wpp=L0[q, r, w]()),
-        -KL[listener.w | world.w] - {LENGTH_COST} * response_length(r)
+        # The literal interpretation: posterior over worlds given response r is true
+        literal: knows(q, r),
+        literal: given(w in World, wpp=meaning(q, r, w) * world_prior(w)),
+        -KL[literal.w | world.w] - {LENGTH_COST} * response_length(r)
     ]))
     return Pr[speaker.r == r]
 
@@ -165,16 +162,20 @@ def action_utility(g, w, a):
     is_uncontaminated = vial_uncontaminated(w, a)
     return np.where(g == Goal.FIND_UNCONTAMINATED, is_uncontaminated, 1 - is_uncontaminated)
 
-def DPValue(g, q, r):
-    """Value of decision problem after hearing response r to question q."""
-    l0 = L0()
-    posterior = np.array([l0[q, r, w] for w in World])
-    expected_utilities = np.array([
-        np.sum(posterior * np.array([action_utility(g, w, a) for w in World]))
-        for a in Action
-    ])
-    policy = jax.nn.softmax(ALPHA_POLICY * expected_utilities)
-    return np.sum(policy * expected_utilities)
+@memo
+def DPValue[g: Goal, q: Question, r: Response]():
+    """Value of decision problem: expected utility under softmax action policy."""
+    decider: knows(g, q, r)
+    decider: chooses(a in Action, wpp=exp({ALPHA_POLICY} * imagine[
+        world: knows(g, q, r),
+        world: chooses(w in World, wpp=meaning(q, r, w) * world_prior(w)),
+        E[action_utility(g, world.w, a)]
+    ]))
+    return imagine[
+        world: knows(g, q, r),
+        world: chooses(w in World, wpp=meaning(q, r, w) * world_prior(w)),
+        E[action_utility(g, world.w, decider.a)]
+    ]
 
 @memo
 def Q1[g: Goal, q: Question]():
@@ -184,7 +185,7 @@ def Q1[g: Goal, q: Question]():
         scenario: knows(q),
         scenario: given(k in KnowledgeConfig, wpp=1),
         scenario: chooses(r in Response, wpp=R0[q, k, r]()),
-        E[DPValue(g, scenario.q, scenario.r)]
+        E[DPValue[g, scenario.q, scenario.r]()]
     ]))
     return Pr[questioner.q == q]
 
