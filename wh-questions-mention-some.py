@@ -1,120 +1,102 @@
+"""
+Wh-question model with decision problem structure manipulation
+
+Two decision problems:
+1. SINGLETON: Pick ONE vial (current model) - utility from single choice
+2. SET_ID: Classify ALL vials - utility from overall accuracy
+
+The prediction: Goal-alignment effect should be larger for SINGLETON
+(where mention-some suffices) than for SET_ID (where exhaustivity matters more).
+"""
+
+import sys
+import json
 from memo import memo
 import jax
 import jax.numpy as np
 from enum import IntEnum
 
-# =============================================================================
-# Setup: Domain definitions
-# =============================================================================
+# Parameters from command line
+N_VIALS = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+CONTAMINATION_RATE = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
+DECISION_TYPE = sys.argv[3] if len(sys.argv) > 3 else "singleton"  # "singleton" or "set_id"
 
-N_VIALS = 5                     # Number of vials in the scenario
-N_WORLDS = 2 ** N_VIALS         # Possible states of the vials
+N_WORLDS = 2 ** N_VIALS
+ALL_VIALS = (1 << N_VIALS) - 1  # Bitmask with all vial bits set
 
-World = np.arange(N_WORLDS)     # Each world is an integer 0..(2^N_VIALS - 1)
-Response = np.arange(N_WORLDS)  # Responses are also subsets, encoded the same way
-Vial = np.arange(N_VIALS)       # Individual vials: 0, 1, 2, 3, 4
-Action = Vial                   # Questioner's action = picking a vial
+World = np.arange(N_WORLDS)
+Response = np.arange(N_WORLDS)
+Vial = np.arange(N_VIALS)
 
-# Knowledge configurations: all valid (n_cont, n_uncont) pairs where n_cont + n_uncont <= N_VIALS
-# Enumerated as a single domain since the two values constrain each other
+# Action space depends on decision type
+Action = Vial if DECISION_TYPE == "singleton" else np.arange(N_WORLDS)
+
 KNOWLEDGE_CONFIGS = [(n_cont, n_uncont)
                      for n_cont in range(N_VIALS + 1)
                      for n_uncont in range(N_VIALS + 1 - n_cont)]
-N_CONFIGS = len(KNOWLEDGE_CONFIGS)  # (N+1)(N+2)/2 = 21 for N_VIALS=5
+N_CONFIGS = len(KNOWLEDGE_CONFIGS)
 KnowledgeConfig = np.arange(N_CONFIGS)
 
-# Precompute arrays for fast lookup inside JIT functions
 _N_CONT_ARRAY = np.array([c[0] for c in KNOWLEDGE_CONFIGS])
 _N_UNCONT_ARRAY = np.array([c[1] for c in KNOWLEDGE_CONFIGS])
 
+# Model parameters
+ALPHA_R = 5.0
+ALPHA_POLICY = 10.0
+ALPHA_Q = 5.0
+LENGTH_COST = 0.1
+P_CONFIDENT = 0.9
+
+class Question(IntEnum):
+    WHICH_CONTAMINATED = 0
+    WHICH_UNCONTAMINATED = 1
+
+class Goal(IntEnum):
+    FIND_UNCONTAMINATED = 0
+    AVOID_CONTAMINATION = 1
+
+
+# Bitmask helpers
+@jax.jit
+def to_bits(x):
+    """Convert bitmask to array of bits."""
+    return np.array([(x >> i) & 1 for i in range(N_VIALS)])
+
+@jax.jit
+def popcount(x):
+    """Count set bits in bitmask."""
+    return np.sum(to_bits(x))
+
+
+# Knowledge config accessors
 @jax.jit
 def get_n_cont(k):
-    """Extract n_contaminated from knowledge config index k."""
     return _N_CONT_ARRAY[k]
 
 @jax.jit
 def get_n_uncont(k):
-    """Extract n_uncontaminated from knowledge config index k."""
     return _N_UNCONT_ARRAY[k]
 
-def config_to_str(k):
-    """Human-readable string for knowledge config k."""
-    n_cont, n_uncont = KNOWLEDGE_CONFIGS[k]
-    n_unc = N_VIALS - n_cont - n_uncont
-    return f"({n_cont}, {n_uncont}, {n_unc})"
 
-# =============================================================================
-# Model Parameters
-# =============================================================================
-
-CONTAMINATION_RATE = 0.5        # P(any given vial is contaminated), i.i.d. Bernoulli
-ALPHA_R = 5.0                   # R0's softmax temperature when choosing responses
-ALPHA_POLICY = 10.0             # Q1's softmax for picking a vial after getting an answer
-ALPHA_Q = 5.0                   # Q1's rationality when choosing which question to ask
-LENGTH_COST = 0.1               # Penalty per vial mentioned (encourages brevity)
-P_CONFIDENT = 0.9               # R0's confidence level (0.9 = "90% sure")
-
-# There are two wh-questions Q1 can ask
-class Question(IntEnum):
-    WHICH_CONTAMINATED = 0      # "Which vials are contaminated?"
-    WHICH_UNCONTAMINATED = 1    # "Which vials are uncontaminated?"
-
-# Q1's possible goals
-class Goal(IntEnum):
-    FIND_UNCONTAMINATED = 0     # Want to pick an uncontaminated vial
-    AVOID_CONTAMINATION = 1     # Want to avoid contaminated vials 
-
-
-# =============================================================================
-# Semantics: Truth conditions and utility functions
-# =============================================================================
-
+# Semantics and priors
 @jax.jit
 def meaning(q, r, w):
-    """
-    Is response r true in world w for question q?
-
-    For r > 0 (mention-some): r must be subset of queried vials
-    For r = 0 ("none"): asserts the queried set is empty
-
-    E.g., "Which contaminated?" -> "None" is only true if NO vials are contaminated.
-    """
-    all_vials = (1 << N_VIALS) - 1
-    queried = np.where(q == Question.WHICH_UNCONTAMINATED, w, all_vials ^ w)
-    # r > 0: mention-some (r is subset of queried)
-    # r = 0: exhaustive "none" (queried set is empty)
+    queried = np.where(q == Question.WHICH_UNCONTAMINATED, w, ALL_VIALS ^ w)
     return np.where(r > 0, (r & queried) == r, queried == 0)
 
-
 @jax.jit
-def vial_uncontaminated(w, i):
-    """
-    Checks if vial i is uncontaminated in world w.
-    Uses bit extraction: shift w right by i positions, then check the lowest bit.
-    """
-    return (w >> i) & 1
-
-
-# =============================================================================
-# R0: Respondent with Partial Knowledge
-# =============================================================================
+def response_length(r):
+    return popcount(r)
 
 @jax.jit
 def world_prior(w):
-    """Prior P(w) under i.i.d. Bernoulli contamination model."""
-    bits = np.array([(w >> i) & 1 for i in range(N_VIALS)])
+    bits = to_bits(w)
     p_uncontaminated = 1.0 - CONTAMINATION_RATE
     return np.prod(np.where(bits, p_uncontaminated, CONTAMINATION_RATE))
 
 @jax.jit
 def get_speaker_belief(w, n_cont, n_uncont, p_conf):
-    """
-    Compute R0's belief that the world is w.
-      - First n_cont vials: R0 believes ARE contaminated with probability p_conf
-      - Next n_uncont vials: R0 believes are NOT contaminated with probability p_conf
-      - Remaining vials: R0 is uncertain (50/50)
-    """
-    bits = np.array([(w >> i) & 1 for i in range(N_VIALS)])
+    bits = to_bits(w)
     indices = np.arange(N_VIALS)
     p_uncontaminated = np.where(
         indices < n_cont,
@@ -123,28 +105,46 @@ def get_speaker_belief(w, n_cont, n_uncont, p_conf):
     )
     return np.prod(np.where(bits, p_uncontaminated, 1.0 - p_uncontaminated))
 
+# Utility functions
+@jax.jit
+def singleton_utility(g, w, a):
+    """Utility of picking vial a in world w for goal g."""
+    is_uncontaminated = (w >> a) & 1
+    return np.where(g == Goal.FIND_UNCONTAMINATED, is_uncontaminated, 1 - is_uncontaminated)
 
 @jax.jit
-def response_length(r):
-    """
-    Count how many vials are mentioned in response r (population count).
+def set_id_utility(g, w, a):
+    """Utility of guessing bitmask a as uncontaminated vials. Returns recall on goal-relevant category."""
+    # FIND: recall on uncontaminated vials
+    tp_uncont = popcount(w & a)
+    total_uncont = popcount(w)
+    recall_uncont = np.where(total_uncont > 0, tp_uncont / total_uncont, 1.0)
 
-    Used for brevity cost: longer responses are penalized.
-    Example: r=5 (binary 101) mentions 2 vials -> returns 2
-    """
-    return np.sum(np.array([(r >> i) & 1 for i in range(N_VIALS)]))
+    # AVOID: recall on contaminated vials
+    tp_cont = popcount((ALL_VIALS ^ w) & (ALL_VIALS ^ a))
+    total_cont = popcount(ALL_VIALS ^ w)
+    recall_cont = np.where(total_cont > 0, tp_cont / total_cont, 1.0)
+
+    return np.where(g == Goal.FIND_UNCONTAMINATED, recall_uncont, recall_cont)
+
+
+@jax.jit
+def action_utility(g, w, a):
+    """Dispatch to appropriate utility function based on decision type."""
+    if DECISION_TYPE == "singleton":
+        return singleton_utility(g, w, a)
+    else:
+        return set_id_utility(g, w, a)
 
 
 @memo
 def R0[q: Question, k: KnowledgeConfig, r: Response]():
-    """Speaker chooses response to minimize KL(literal interpretation || own beliefs) + length cost."""
     speaker: knows(q, k)
     speaker: thinks[
         world: knows(k),
         world: chooses(w in World, wpp=get_speaker_belief(w, get_n_cont(k), get_n_uncont(k), {P_CONFIDENT}))
     ]
     speaker: chooses(r in Response, wpp=exp({ALPHA_R} * imagine[
-        # The literal interpretation: posterior over worlds given response r is true
         literal: knows(q, r),
         literal: given(w in World, wpp=meaning(q, r, w) * world_prior(w)),
         -KL[literal.w | world.w] - {LENGTH_COST} * response_length(r)
@@ -152,19 +152,8 @@ def R0[q: Question, k: KnowledgeConfig, r: Response]():
     return Pr[speaker.r == r]
 
 
-# =============================================================================
-# Q1: Questioner with Goals (marginalizes over unknown R0 knowledge)
-# =============================================================================
-
-@jax.jit
-def action_utility(g, w, a):
-    """Utility of picking vial a in world w for goal g."""
-    is_uncontaminated = vial_uncontaminated(w, a)
-    return np.where(g == Goal.FIND_UNCONTAMINATED, is_uncontaminated, 1 - is_uncontaminated)
-
 @memo
 def DPValue[g: Goal, q: Question, r: Response]():
-    """Value of decision problem: expected utility under softmax action policy."""
     decider: knows(g, q, r)
     decider: chooses(a in Action, wpp=exp({ALPHA_POLICY} * imagine[
         world: knows(g, q, r),
@@ -177,9 +166,9 @@ def DPValue[g: Goal, q: Question, r: Response]():
         E[action_utility(g, world.w, decider.a)]
     ]
 
+
 @memo
 def Q1[g: Goal, q: Question]():
-    """Questioner chooses question, marginalizing over R0's unknown knowledge config."""
     questioner: knows(g)
     questioner: chooses(q in Question, wpp=exp({ALPHA_Q} * imagine[
         scenario: knows(q),
@@ -190,65 +179,21 @@ def Q1[g: Goal, q: Question]():
     return Pr[questioner.q == q]
 
 
-# =============================================================================
-# Demo: Helper functions and main entry point
-# =============================================================================
-
-def vials_to_str(x):
-    """Convert a bitmask to a human-readable set notation."""
-    vials = [i for i in range(N_VIALS) if (x >> i) & 1]
-    return "{" + ",".join(str(v) for v in vials) + "}" if vials else "{}"
-
-
-def print_r0_responses():
-    """Show how R0's responses vary by knowledge configuration."""
-    r0 = R0()
-    for k in [0, 7, 14, 20]:
-        if k >= N_CONFIGS:
-            continue
-        print(f"  {config_to_str(k)}:")
-        for q in Question:
-            top_resp = max(Response, key=lambda r: float(r0[q, k, r]))
-            prob = float(r0[q, k, top_resp])
-            print(f"    {q.name}: '{vials_to_str(top_resp)}' ({prob:.2f})")
-
-
-def print_confidence_scaling():
-    """Show how Q1's preferences vary with R0's confidence level (P_CONFIDENT)."""
-    global P_CONFIDENT
-    original = P_CONFIDENT
-
-    print("\nQ1's preferences by R0 confidence level:")
-    print(f"  {'P_CONFIDENT':<12} {'FIND_UNCONTAM':<20} {'AVOID_CONTAM':<20}")
-    print(f"  {'':12} {'P(Which uncont?)':<20} {'P(Which cont?)':<20}")
-    print("  " + "-" * 52)
-
-    for p_conf in [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99]:
-        P_CONFIDENT = p_conf
-        q1 = Q1()
-        p_find = float(q1[Goal.FIND_UNCONTAMINATED, Question.WHICH_UNCONTAMINATED])
-        p_avoid = float(q1[Goal.AVOID_CONTAMINATION, Question.WHICH_CONTAMINATED])
-        print(f"  {p_conf:<12.2f} {p_find:<20.3f} {p_avoid:<20.3f}")
-
-    P_CONFIDENT = original  # restore
-
-
-def main():
-    print(f"Wh-Questions Model: {N_VIALS} vials, {N_WORLDS} worlds, {N_CONFIGS} knowledge configs\n")
-    print("R0's responses for selected knowledge configs:")
-    print("(N_conf_contaminated, N_conf_uncontaminated, uncertain)")
-    print_r0_responses()
-
-    q1 = Q1()
-    print("\nQ1's question preferences (marginalizing over R0's knowledge):")
-    for g in Goal:
-        p_cont = float(q1[g, Question.WHICH_CONTAMINATED])
-        p_uncont = float(q1[g, Question.WHICH_UNCONTAMINATED])
-        print(f"  {g.name}: P(Which cont?)={p_cont:.2f}, P(Which uncont?)={p_uncont:.2f}")
-
-    print_confidence_scaling()
-
-
-
 if __name__ == "__main__":
-    main()
+    q1 = Q1()
+    
+    results = {
+        'n_vials': N_VIALS,
+        'contamination_rate': CONTAMINATION_RATE,
+        'decision_type': DECISION_TYPE,
+        'find_uncontam': {
+            'p_which_cont': float(q1[Goal.FIND_UNCONTAMINATED, Question.WHICH_CONTAMINATED]),
+            'p_which_uncont': float(q1[Goal.FIND_UNCONTAMINATED, Question.WHICH_UNCONTAMINATED])
+        },
+        'avoid_contam': {
+            'p_which_cont': float(q1[Goal.AVOID_CONTAMINATION, Question.WHICH_CONTAMINATED]),
+            'p_which_uncont': float(q1[Goal.AVOID_CONTAMINATION, Question.WHICH_UNCONTAMINATED])
+        }
+    }
+    
+    print(json.dumps(results))

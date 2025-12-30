@@ -1,0 +1,188 @@
+---
+title: "Wh-Question Polarity Model: Experiment Simulations"
+format:
+  html:
+    code-fold: true
+    toc: true
+  pdf:
+    toc: true
+execute:
+  warning: false
+---
+
+## Setup
+
+```{python}
+from __future__ import annotations
+
+import json
+import subprocess
+from dataclasses import dataclass, field, asdict
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Configuration
+SCRIPT_DIR = Path(".").resolve()
+MODEL_SCRIPT = SCRIPT_DIR / "wh-questions-mention-some.py"
+
+matplotlib.rcParams.update({'pdf.fonttype': 42, 'font.family': 'sans-serif', 'font.size': 11})
+COLORS = {'find': '#2166AC', 'avoid': '#B2182B'}
+```
+
+```{python}
+@dataclass
+class Results:
+    """Experiment results with predictions per condition."""
+    n_vials: int
+    base_rates: list[float]
+    conditions: dict[str, dict[str, list[float]]] = field(default_factory=dict)
+
+
+def run_model(n_vials: int, contamination_rate: float, decision_type: str = "singleton") -> dict | None:
+    """Run the model and return predictions, or None on failure."""
+    try:
+        result = subprocess.run(
+            ['python', str(MODEL_SCRIPT), str(n_vials), str(contamination_rate), decision_type],
+            capture_output=True, text=True, timeout=180, cwd=SCRIPT_DIR
+        )
+        if result.returncode == 0:
+            return json.loads(result.stdout.strip().split('\n')[-1])
+        print(f"  Error: {result.stderr[:100]}")
+    except Exception as e:
+        print(f"  {type(e).__name__}: {e}")
+    return None
+
+
+def style_axis(ax: plt.Axes, xlabel: str, ylabel: str, xlim: tuple, title: str = None) -> None:
+    """Apply consistent styling to an axis."""
+    ax.axhline(0.5, color='gray', linestyle=':', alpha=0.5, linewidth=1)
+    ax.set(xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=(0, 1))
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.legend(loc='center left', frameon=False, title='Goal')
+    ax.spines[['top', 'right']].set_visible(False)
+    if title:
+        ax.set_title(title, fontsize=12, fontweight='bold')
+```
+
+## Experiment 1: Goal × Base Rate
+
+Tests the core prediction that question choice is driven by **goal-alignment**: questioners prefer asking about the category they want to identify.
+
+- **Goal** (between): FIND_UNCONTAMINATED vs AVOID_CONTAMINATION
+- **Base rate** (within): 10% to 90% contamination
+- **Fixed**: N=5 vials, singleton selection
+
+```{python}
+def run_exp1(n_vials: int = 5, base_rates: list[float] | None = None) -> Results:
+    """Exp 1: Goal × Base Rate (singleton selection)."""
+    if base_rates is None:
+        base_rates = list(np.arange(0.1, 0.95, 0.05))
+
+    print(f"Running Exp 1: N={n_vials}, {len(base_rates)} base rates")
+    results = Results(n_vials=n_vials, base_rates=base_rates, conditions={
+        'find': {'p_uncont': [], 'p_cont': []},
+        'avoid': {'p_uncont': [], 'p_cont': []}
+    })
+
+    for i, br in enumerate(base_rates):
+        print(f"  [{i+1}/{len(base_rates)}] BR={br:.2f}", end="", flush=True)
+        if res := run_model(n_vials, br, "singleton"):
+            results.conditions['find']['p_uncont'].append(res['find_uncontam']['p_which_uncont'])
+            results.conditions['find']['p_cont'].append(res['find_uncontam']['p_which_cont'])
+            results.conditions['avoid']['p_uncont'].append(res['avoid_contam']['p_which_uncont'])
+            results.conditions['avoid']['p_cont'].append(res['avoid_contam']['p_which_cont'])
+            print(f" ✓")
+        else:
+            for cond in results.conditions.values():
+                cond['p_uncont'].append(np.nan)
+                cond['p_cont'].append(np.nan)
+            print(f" ✗")
+    return results
+
+exp1 = run_exp1(n_vials=5)
+```
+
+```{python}
+#| label: fig-exp1
+#| fig-cap: "Experiment 1: Goal-polarity alignment across base rates"
+
+fig, ax = plt.subplots(figsize=(6, 4))
+br = np.array(exp1.base_rates)
+
+ax.plot(br, exp1.conditions['find']['p_uncont'], 'o-', color=COLORS['find'],
+        label='Find uncontaminated', linewidth=2, markersize=5)
+ax.plot(br, exp1.conditions['avoid']['p_uncont'], 's--', color=COLORS['avoid'],
+        label='Avoid contaminated', linewidth=2, markersize=5)
+
+style_axis(ax, 'Base rate of contamination', 'P("Which are uncontaminated?")', (0.05, 0.95))
+plt.tight_layout()
+plt.show()
+```
+
+## Experiment 2: Decision Structure × Goal
+
+Tests whether goal-alignment depends on the **decision problem structure**. For singleton selection, mention-some answers suffice. For set identification, exhaustivity is needed.
+
+- **Decision structure** (between): Singleton vs Set ID
+- **Goal** (between): FIND_UNCONTAMINATED vs AVOID_CONTAMINATION
+- **Base rate** (within): 20%, 35%, 50%, 65%, 80%
+- **Fixed**: N=4 vials
+
+```{python}
+def run_exp2(n_vials: int = 4, base_rates: list[float] | None = None) -> Results:
+    """Exp 2: Decision Structure × Goal."""
+    if base_rates is None:
+        base_rates = [0.2, 0.35, 0.5, 0.65, 0.8]
+
+    print(f"Running Exp 2: N={n_vials}, {len(base_rates)} base rates × 2 decision types")
+    results = Results(n_vials=n_vials, base_rates=base_rates, conditions={
+        'singleton': {'find_p': [], 'avoid_p': []},
+        'set_id': {'find_p': [], 'avoid_p': []}
+    })
+
+    for dt in ['singleton', 'set_id']:
+        print(f"  {dt}:", end="", flush=True)
+        for br in base_rates:
+            if res := run_model(n_vials, br, dt):
+                results.conditions[dt]['find_p'].append(res['find_uncontam']['p_which_uncont'])
+                results.conditions[dt]['avoid_p'].append(res['avoid_contam']['p_which_cont'])
+                print(f" ✓", end="", flush=True)
+            else:
+                results.conditions[dt]['find_p'].append(np.nan)
+                results.conditions[dt]['avoid_p'].append(np.nan)
+                print(f" ✗", end="", flush=True)
+        print()
+    return results
+
+exp2 = run_exp2(n_vials=4)
+```
+
+```{python}
+#| label: fig-exp2
+#| fig-cap: "Experiment 2: Goal effect is strong for singleton but absent for set identification"
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+br = np.array(exp2.base_rates)
+
+for ax, (dt, title) in zip(axes, [('singleton', 'Singleton selection'), ('set_id', 'Set identification')]):
+    ax.plot(br, exp2.conditions[dt]['find_p'], 'o-', color=COLORS['find'],
+            label='Find uncontaminated', linewidth=2, markersize=6)
+    ax.plot(br, 1 - np.array(exp2.conditions[dt]['avoid_p']), 's--', color=COLORS['avoid'],
+            label='Avoid contaminated', linewidth=2, markersize=6)
+    style_axis(ax, 'Base rate of contamination', 'P("Which are uncontaminated?")', (0.15, 0.85), title)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Save Results
+
+```{python}
+results_path = SCRIPT_DIR / "simulation_results.json"
+with open(results_path, 'w') as f:
+    json.dump({'exp1': asdict(exp1), 'exp2': asdict(exp2)}, f, indent=2)
+print(f"Saved: {results_path}")
+```
