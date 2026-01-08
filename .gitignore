@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# Claude Code
+CLAUDE.md
+
 # Python
 __pycache__/
 *.py[cod]
@@ -9,9 +12,9 @@ __pycache__/
 *.egg
 
 # Simulation outputs
-simulation_results.json
-simulations.html
-simulations_files/
+model/simulation_results.json
+model/simulations.html
+model/simulations_files/
 
 # IDE
 .vscode/
@@ -19,3 +22,10 @@ simulations_files/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Node
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/

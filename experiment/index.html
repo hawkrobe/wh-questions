@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Laboratory Decision Study</title>
+    <script src="https://unpkg.com/jspsych@8.0.2"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-text@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-instructions@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@2.0.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-call-function@2.0.0"></script>
+    <link href="https://unpkg.com/jspsych@8.0.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+        /* =================================================================
+           BASE STYLES
+           ================================================================= */
+        :root {
+            --safe-color: #4CAF50;
+            --safe-light: #c8e6c9;
+            --safe-glow: rgba(76, 175, 80, 0.3);
+            --danger-color: #f44336;
+            --danger-light: #ffcdd2;
+            --danger-glow: rgba(244, 67, 54, 0.3);
+            --unknown-color: #9e9e9e;
+            --unknown-light: #eeeeee;
+            --goal-highlight: #fff3cd;
+            --goal-border: #ffc107;
+            --info-bg: #e3f2fd;
+            --info-border: #2196F3;
+            --glass-color: rgba(200, 230, 255, 0.4);
+            --liquid-unknown: linear-gradient(to bottom, #b0bec5 0%, #78909c 100%);
+            --liquid-safe: linear-gradient(to bottom, #81c784 0%, #4CAF50 100%);
+            --liquid-danger: linear-gradient(to bottom, #e57373 0%, #f44336 100%);
+        }
+
+        .jspsych-content {
+            max-width: 900px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .jspsych-btn {
+            font-size: 18px;
+            padding: 15px 30px;
+            margin: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #333;
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 280px;
+        }
+
+        .jspsych-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: linear-gradient(to bottom, #ffffff 0%, #e8e8e8 100%);
+        }
+
+        .jspsych-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* =================================================================
+           VIAL GRAPHICS SYSTEM
+           ================================================================= */
+        .vial-rack {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            padding: 30px 20px 20px 20px;
+            background: linear-gradient(to bottom, #f5f5f5 0%, #e0e0e0 100%);
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 500px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .vial-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vial {
+            width: 36px;
+            height: 75px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Vial cap/stopper */
+        .vial::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 10px;
+            background: linear-gradient(to bottom, #555 0%, #333 100%);
+            border-radius: 3px 3px 0 0;
+            z-index: 2;
+        }
+
+        /* Vial neck */
+        .vial::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 15px;
+            background: var(--glass-color);
+            border: 2px solid rgba(100, 150, 180, 0.5);
+            border-bottom: none;
+            z-index: 1;
+        }
+
+        /* Main vial body */
+        .vial-body {
+            position: absolute;
+            top: 13px;
+            width: 100%;
+            height: 62px;
+            background: var(--glass-color);
+            border: 2px solid rgba(100, 150, 180, 0.5);
+            border-radius: 0 0 18px 18px;
+            overflow: hidden;
+            box-shadow:
+                inset -3px 0 8px rgba(255,255,255,0.3),
+                inset 3px 0 8px rgba(0,0,0,0.05),
+                0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Liquid inside vial */
+        .vial-liquid {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 70%;
+            border-radius: 0 0 15px 15px;
+            transition: all 0.3s ease;
+        }
+
+        /* Liquid states */
+        .vial.unknown .vial-liquid {
+            background: var(--liquid-unknown);
+        }
+
+        .vial.safe .vial-liquid {
+            background: var(--liquid-safe);
+            box-shadow: 0 0 10px var(--safe-glow);
+        }
+
+        .vial.danger .vial-liquid {
+            background: var(--liquid-danger);
+            box-shadow: 0 0 10px var(--danger-glow);
+        }
+
+        /* Vial label */
+        .vial-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+            min-height: 20px;
+        }
+
+        /* Status indicator on vial */
+        .vial-status {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 3;
+            text-shadow: 0 0 3px white;
+        }
+
+        .vial.unknown .vial-status::after { content: '?'; color: #555; }
+        .vial.safe .vial-status::after { content: '✓'; color: #1b5e20; }
+        .vial.danger .vial-status::after { content: '☠'; color: #b71c1c; }
+
+        /* Tested indicator */
+        .vial.tested::before {
+            background: linear-gradient(to bottom, #1976D2 0%, #0D47A1 100%);
+        }
+
+        /* =================================================================
+           INSTRUCTION PAGES
+           ================================================================= */
+        .instruction-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .instruction-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .instruction-text {
+            font-size: 20px;
+            color: #444;
+            margin: 15px 0;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .instruction-emphasis {
+            background: var(--goal-highlight);
+            border: 2px solid var(--goal-border);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            font-weight: 500;
+        }
+
+        .assistant-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 20px auto;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+        }
+
+        .partial-knowledge-demo {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .knowledge-column {
+            text-align: center;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            min-width: 180px;
+        }
+
+        .knowledge-column h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+
+        /* =================================================================
+           TRIAL DISPLAY
+           ================================================================= */
+        .trial-container {
+            position: relative;
+        }
+
+        .trial-header {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 14px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 15px;
+        }
+
+        .practice-badge {
+            background: linear-gradient(135deg, #81c784 0%, #4caf50 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-card {
+            background: var(--info-bg);
+            border: 2px solid var(--info-border);
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin: 15px auto;
+            max-width: 450px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-card .icon {
+            font-size: 24px;
+        }
+
+        .goal-card {
+            background: var(--goal-highlight);
+            border: 2px solid var(--goal-border);
+            border-radius: 10px;
+            padding: 15px 25px;
+            margin: 15px auto;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .goal-card .icon {
+            font-size: 28px;
+        }
+
+        .goal-card.find-goal {
+            border-color: var(--safe-color);
+            background: var(--safe-light);
+        }
+
+        .goal-card.avoid-goal {
+            border-color: var(--danger-color);
+            background: var(--danger-light);
+        }
+
+        .question-prompt {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            color: #333;
+        }
+
+        /* =================================================================
+           PRACTICE FEEDBACK
+           ================================================================= */
+        .assistant-response {
+            background: #e3f2fd;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 550px;
+            position: relative;
+        }
+
+        .assistant-response::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 30px;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #e3f2fd;
+        }
+
+        .speech-bubble {
+            font-style: italic;
+            color: #1565c0;
+            margin: 10px 0;
+        }
+
+        .insight-box {
+            background: #fff8e1;
+            border: 2px solid #ffb300;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 550px;
+        }
+
+        .insight-box strong {
+            color: #e65100;
+        }
+
+        /* =================================================================
+           OUTCOME VISUALIZATION
+           ================================================================= */
+        .outcome-demo {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 25px 0;
+        }
+
+        .outcome-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            min-width: 200px;
+        }
+
+        .outcome-box.success {
+            background: var(--safe-light);
+            border: 2px solid var(--safe-color);
+        }
+
+        .outcome-box.failure {
+            background: var(--danger-light);
+            border: 2px solid var(--danger-color);
+        }
+
+        .outcome-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .outcome-label {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* =================================================================
+           SORTING BINS (for set_id)
+           ================================================================= */
+        .sorting-demo {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .sorting-bin {
+            width: 150px;
+            height: 120px;
+            border: 3px dashed #999;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+        }
+
+        .sorting-bin.safe-bin {
+            border-color: var(--safe-color);
+            background: var(--safe-light);
+        }
+
+        .sorting-bin.dispose-bin {
+            border-color: var(--danger-color);
+            background: var(--danger-light);
+        }
+
+        .bin-label {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .bin-icon {
+            font-size: 36px;
+        }
+
+        /* =================================================================
+           ANIMATIONS
+           ================================================================= */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px var(--safe-glow); }
+            50% { box-shadow: 0 0 20px var(--safe-glow); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .glow-safe {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        /* =================================================================
+           COMPREHENSION CHECKS
+           ================================================================= */
+        .check-correct {
+            color: var(--safe-color);
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .check-incorrect {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        /* =================================================================
+           INSTRUCTIONS BOX (legacy - for demographics/debrief)
+           ================================================================= */
+        .instructions-box {
+            text-align: left;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* =================================================================
+           QUESTION BUTTONS (used in instructions)
+           ================================================================= */
+        .question-btn {
+            background: linear-gradient(to bottom, #ffffff 0%, #f5f5f5 100%);
+            border: 3px solid #1976d2;
+            border-radius: 12px;
+            padding: 20px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 280px;
+        }
+
+        .question-btn:hover:not(:disabled) {
+            background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.3);
+        }
+    </style>
+</head>
+<body></body>
+<script>
+// =============================================================================
+// CONFIGURATION AND SETUP
+// =============================================================================
+
+// Get URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const prolificPID = urlParams.get('PROLIFIC_PID') || 'unknown';
+const studyID = urlParams.get('STUDY_ID') || 'unknown';
+const sessionID = urlParams.get('SESSION_ID') || 'unknown';
+
+// Experiment version: 'exp1' or 'exp2'
+let expVersion = urlParams.get('exp') || null;
+
+// Condition assignment (can be set via URL or random)
+let goalCondition = urlParams.get('goal') || null;  // 'find' or 'avoid'
+let decisionStructure = urlParams.get('structure') || null;  // 'singleton' or 'set_id' (exp2 only)
+
+// Random assignment if not specified
+if (!expVersion) {
+    expVersion = Math.random() < 0.5 ? 'exp1' : 'exp2';
+}
+
+if (!goalCondition) {
+    goalCondition = Math.random() < 0.5 ? 'find' : 'avoid';
+}
+
+if (expVersion === 'exp2' && !decisionStructure) {
+    decisionStructure = Math.random() < 0.5 ? 'singleton' : 'set_id';
+}
+
+// For exp1, decision structure is always singleton
+if (expVersion === 'exp1') {
+    decisionStructure = 'singleton';
+}
+
+// Test mode - skip button delays for faster testing
+const testMode = urlParams.get('testMode') === 'true';
+const buttonDisableTime = testMode ? 100 : 2000;
+
+// Number of vials
+const nVials = expVersion === 'exp1' ? 5 : 4;
+
+// =============================================================================
+// VIAL RENDERING HELPERS
+// =============================================================================
+
+function renderVial(id, state = 'unknown', showLabel = true) {
+    // state: 'unknown', 'safe', 'danger'
+    const testedClass = (state === 'safe' || state === 'danger') ? 'tested' : '';
+    return `
+        <div class="vial-container">
+            <div class="vial ${state} ${testedClass}">
+                <div class="vial-body">
+                    <div class="vial-liquid"></div>
+                </div>
+                <div class="vial-status"></div>
+            </div>
+            ${showLabel ? `<div class="vial-label">${id}</div>` : ''}
+        </div>
+    `;
+}
+
+function renderVialRack(states = null, n = nVials) {
+    // states: array of 'unknown'|'safe'|'danger', or null for all unknown
+    if (!states) {
+        states = Array(n).fill('unknown');
+    }
+    const vials = states.map((state, i) => renderVial(i + 1, state)).join('');
+    return `<div class="vial-rack">${vials}</div>`;
+}
+
+// =============================================================================
+// STIMULUS TEXT CONFIGURATIONS
+// =============================================================================
+
+const questionOptions = [
+    "Which vials are contaminated?",
+    "Which vials are uncontaminated?"
+];
+
+function getBaseRateText(baseRate) {
+    if (expVersion === 'exp1') {
+        const texts = {
+            0.2: `About <strong>1</strong> of ${nVials} is likely contaminated`,
+            0.5: `About <strong>2-3</strong> of ${nVials} are likely contaminated`,
+            0.8: `About <strong>4</strong> of ${nVials} are likely contaminated`
+        };
+        return texts[baseRate];
+    } else {
+        return `About <strong>2</strong> of ${nVials} are likely contaminated`;
+    }
+}
+
+// Consolidated goal configuration
+function getGoalConfig() {
+    const configs = {
+        singleton: {
+            find: {
+                text: 'Find a <strong>safe</strong> vial to use',
+                icon: '✓',
+                cssClass: 'find-goal'
+            },
+            avoid: {
+                text: 'Avoid picking a <strong>contaminated</strong> vial',
+                icon: '⚠',
+                cssClass: 'avoid-goal'
+            }
+        },
+        set_id: {
+            find: {
+                text: 'Sort all vials: earn points for correctly placing <strong>safe</strong> vials',
+                icon: '✓',
+                cssClass: 'find-goal'
+            },
+            avoid: {
+                text: 'Sort all vials: earn points for correctly disposing <strong>contaminated</strong> vials',
+                icon: '⚠',
+                cssClass: 'avoid-goal'
+            }
+        }
+    };
+    return configs[decisionStructure][goalCondition];
+}
+
+// Reusable button disable function
+function disableButtonsTemporarily(duration = buttonDisableTime) {
+    const buttons = document.querySelectorAll('.jspsych-btn');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    });
+    setTimeout(() => {
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        });
+    }, duration);
+}
+
+// =============================================================================
+// JSPSYCH INITIALIZATION
+// =============================================================================
+
+const jsPsych = initJsPsych({
+    on_finish: function() {
+        // Compile final data
+        const finalData = {
+            prolific_pid: prolificPID,
+            study_id: studyID,
+            session_id: sessionID,
+            exp_version: expVersion,
+            goal_condition: goalCondition,
+            decision_structure: decisionStructure,
+            trials: jsPsych.data.get().values(),
+            completion_time: new Date().toISOString()
+        };
+
+        // Create downloadable data blob
+        const dataBlob = new Blob([JSON.stringify(finalData, null, 2)], {type: 'application/json'});
+        const dataUrl = URL.createObjectURL(dataBlob);
+
+        // Display completion code for Prolific
+        const completionCode = 'WHQPOL2024';
+        jsPsych.getDisplayElement().innerHTML = `
+            <div style="text-align: center; padding: 50px;">
+                <h2>Thank you for completing the study!</h2>
+                <p>Your completion code is:</p>
+                <h1 style="background: #f0f0f0; padding: 20px; border-radius: 10px;">${completionCode}</h1>
+                <p>Please copy this code and paste it into Prolific to receive your payment.</p>
+                <p style="margin-top: 30px; color: #666;">You may now close this window.</p>
+                <p style="margin-top: 20px;">
+                    <a href="${dataUrl}" download="wh_questions_data_${prolificPID}_${Date.now()}.json"
+                       style="color: #666; font-size: 12px;">[Download data (for testing)]</a>
+                </p>
+            </div>
+        `;
+
+        // Log data to console (in production, send to server)
+        console.log('Final experiment data:', JSON.stringify(finalData, null, 2));
+    }
+});
+
+// =============================================================================
+// TIMELINE CONSTRUCTION
+// =============================================================================
+
+let timeline = [];
+
+// -----------------------------------------------------------------------------
+// WELCOME AND CONSENT
+// -----------------------------------------------------------------------------
+
+const welcome = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+        <h1>Welcome to the Study</h1>
+        <div class="instructions-box">
+            <p>Thank you for participating in this research study conducted by [University Name].</p>
+            <p><strong>Purpose:</strong> This study investigates how people make decisions and ask questions in uncertain situations.</p>
+            <p><strong>Duration:</strong> Approximately 10-15 minutes.</p>
+            <p><strong>Compensation:</strong> You will receive the posted payment upon completion.</p>
+            <p><strong>Confidentiality:</strong> Your responses are anonymous and will only be used for research purposes.</p>
+            <p><strong>Voluntary Participation:</strong> You may withdraw at any time without penalty.</p>
+            <br>
+            <p>By clicking "I Agree" below, you confirm that you are at least 18 years old and consent to participate.</p>
+        </div>
+    `,
+    choices: ['I Agree'],
+    data: { trial_type: 'consent' }
+};
+timeline.push(welcome);
+
+// -----------------------------------------------------------------------------
+// VISUAL INSTRUCTIONS (5 pages)
+// -----------------------------------------------------------------------------
+
+function getVisualInstructionPages() {
+    const pages = [];
+
+    // Page 1: Your Lab Bench
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">🧪 Your Lab Bench</h2>
+            <p class="instruction-text">You work in a laboratory with biological samples stored in vials.</p>
+            ${renderVialRack()}
+            <p class="instruction-text">You have <strong>${nVials} vials</strong> on your bench.</p>
+            <p class="instruction-text" style="color: #666;">Currently, you don't know which are safe to use...</p>
+        </div>
+    `);
+
+    // Page 2: The Problem
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">⚠️ The Problem</h2>
+            <p class="instruction-text">Some vials are <strong style="color: var(--safe-color);">safe</strong> (uncontaminated) and some are <strong style="color: var(--danger-color);">contaminated</strong> (dangerous).</p>
+            <p class="instruction-text">But you can't tell which is which just by looking!</p>
+            <div style="display: flex; justify-content: center; gap: 40px; margin: 30px 0;">
+                <div style="text-align: center;">
+                    ${renderVial('', 'safe', false)}
+                    <div style="margin-top: 10px; color: var(--safe-color); font-weight: bold;">Safe ✓</div>
+                </div>
+                <div style="text-align: center;">
+                    ${renderVial('', 'danger', false)}
+                    <div style="margin-top: 10px; color: var(--danger-color); font-weight: bold;">Contaminated ☠</div>
+                </div>
+                <div style="text-align: center;">
+                    ${renderVial('', 'unknown', false)}
+                    <div style="margin-top: 10px; color: var(--unknown-color); font-weight: bold;">Unknown ?</div>
+                </div>
+            </div>
+            <p class="instruction-text">You need to figure out which vials are which before making your decision.</p>
+        </div>
+    `);
+
+    // Page 3: Your Assistant
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
+            <div class="assistant-avatar">👨‍🔬</div>
+            <p class="instruction-text">You have a lab assistant who can help. You can ask them <strong>ONE question</strong>.</p>
+            <div class="instruction-emphasis">
+                <strong>Important:</strong> Your assistant has tested <strong>some</strong> vials, but <strong>not all</strong> of them!
+            </div>
+            <div class="partial-knowledge-demo">
+                <div class="knowledge-column">
+                    <h4>Tested</h4>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'danger', false)}
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Assistant knows these</p>
+                </div>
+                <div class="knowledge-column">
+                    <h4>Not Tested</h4>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'unknown', false)}
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Assistant doesn't know these</p>
+                </div>
+            </div>
+            <p class="instruction-text">They can only tell you about vials they've tested.</p>
+        </div>
+    `);
+
+    // Page 4: Your Goal (different for FIND vs AVOID, singleton vs set_id)
+    if (decisionStructure === 'singleton') {
+        if (goalCondition === 'find') {
+            pages.push(`
+                <div class="instruction-container fade-in">
+                    <h2 class="instruction-title">🎯 Your Goal</h2>
+                    <p class="instruction-text">Your experiment needs a clean sample. You must pick <strong>ONE vial</strong> to use.</p>
+                    <div class="outcome-demo">
+                        <div class="outcome-box success">
+                            <div class="outcome-icon">✓</div>
+                            ${renderVial('', 'safe', false)}
+                            <div class="outcome-label">Success!</div>
+                            <p style="font-size: 14px; margin: 5px 0;">Picked a safe vial</p>
+                        </div>
+                        <div class="outcome-box failure">
+                            <div class="outcome-icon">💥</div>
+                            ${renderVial('', 'danger', false)}
+                            <div class="outcome-label">Failure!</div>
+                            <p style="font-size: 14px; margin: 5px 0;">Sample ruined</p>
+                        </div>
+                    </div>
+                    <div class="goal-card find-goal">
+                        <span class="icon">✓</span>
+                        <span><strong>Your Goal:</strong> Find an uncontaminated vial to use</span>
+                    </div>
+                </div>
+            `);
+        } else {
+            pages.push(`
+                <div class="instruction-container fade-in">
+                    <h2 class="instruction-title">🎯 Your Goal</h2>
+                    <p class="instruction-text">Contaminated vials are <strong>dangerous</strong>—they'll destroy your equipment!</p>
+                    <p class="instruction-text">You must pick <strong>ONE vial</strong> carefully.</p>
+                    <div class="outcome-demo">
+                        <div class="outcome-box success">
+                            <div class="outcome-icon">✓</div>
+                            ${renderVial('', 'safe', false)}
+                            <div class="outcome-label">Safe!</div>
+                            <p style="font-size: 14px; margin: 5px 0;">Equipment intact</p>
+                        </div>
+                        <div class="outcome-box failure">
+                            <div class="outcome-icon">💥</div>
+                            ${renderVial('', 'danger', false)}
+                            <div class="outcome-label">Disaster!</div>
+                            <p style="font-size: 14px; margin: 5px 0;">Equipment destroyed!</p>
+                        </div>
+                    </div>
+                    <div class="goal-card avoid-goal">
+                        <span class="icon">⚠</span>
+                        <span><strong>Your Goal:</strong> Avoid picking a contaminated vial</span>
+                    </div>
+                </div>
+            `);
+        }
+    } else {
+        // set_id condition
+        if (goalCondition === 'find') {
+            pages.push(`
+                <div class="instruction-container fade-in">
+                    <h2 class="instruction-title">🎯 Your Task</h2>
+                    <p class="instruction-text">You need to <strong>SORT all vials</strong> into two bins.</p>
+                    <div class="sorting-demo">
+                        <div class="sorting-bin safe-bin">
+                            <div class="bin-icon">✓</div>
+                            <div class="bin-label">Safe to Use</div>
+                        </div>
+                        <div class="sorting-bin dispose-bin">
+                            <div class="bin-icon">🗑</div>
+                            <div class="bin-label">Dispose</div>
+                        </div>
+                    </div>
+                    <div class="goal-card find-goal">
+                        <span class="icon">✓</span>
+                        <span><strong>Earn Points:</strong> +1 for each <strong>safe</strong> vial correctly placed in "Safe to Use"</span>
+                    </div>
+                    <p class="instruction-text">The more safe vials you correctly identify, the higher your score!</p>
+                </div>
+            `);
+        } else {
+            pages.push(`
+                <div class="instruction-container fade-in">
+                    <h2 class="instruction-title">🎯 Your Task</h2>
+                    <p class="instruction-text">You need to <strong>SORT all vials</strong> into two bins.</p>
+                    <div class="sorting-demo">
+                        <div class="sorting-bin safe-bin">
+                            <div class="bin-icon">✓</div>
+                            <div class="bin-label">Safe to Use</div>
+                        </div>
+                        <div class="sorting-bin dispose-bin">
+                            <div class="bin-icon">☠</div>
+                            <div class="bin-label">Dispose</div>
+                        </div>
+                    </div>
+                    <div class="goal-card avoid-goal">
+                        <span class="icon">⚠</span>
+                        <span><strong>Earn Points:</strong> +1 for each <strong>contaminated</strong> vial correctly placed in "Dispose"</span>
+                    </div>
+                    <p class="instruction-text">The more contaminated vials you correctly dispose, the higher your score!</p>
+                </div>
+            `);
+        }
+    }
+
+    // Page 5: Your Question Choice
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">❓ Your Question</h2>
+            <p class="instruction-text">Before deciding, you can ask your assistant <strong>ONE</strong> of two questions:</p>
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 25px 0; flex-wrap: wrap;">
+                <div class="question-btn" style="cursor: default;">
+                    "Which vials are <strong style="color: var(--danger-color);">contaminated</strong>?"
+                </div>
+                <div class="question-btn" style="cursor: default;">
+                    "Which vials are <strong style="color: var(--safe-color);">uncontaminated</strong>?"
+                </div>
+            </div>
+            <p class="instruction-text">Think about which question would give you the most useful information for <strong>your goal</strong>.</p>
+            <div class="instruction-emphasis">
+                You'll complete <strong>${expVersion === 'exp1' ? '12' : '8'} trials</strong> (plus one practice trial).
+            </div>
+        </div>
+    `);
+
+    return pages;
+}
+
+const instructions = {
+    type: jsPsychInstructions,
+    pages: getVisualInstructionPages(),
+    show_clickable_nav: true,
+    button_label_previous: 'Back',
+    button_label_next: 'Next',
+    data: { trial_type: 'instructions' }
+};
+timeline.push(instructions);
+
+// -----------------------------------------------------------------------------
+// COMPREHENSION CHECKS
+// -----------------------------------------------------------------------------
+
+const maxComprehensionAttempts = 3;
+let comp1Attempts = 0;
+let comp1Passed = false;
+
+// Universal comprehension check options (works for both singleton and set_id)
+// The key concept is goal orientation, not task-specific wording
+const goalCheckOptions = [
+    'Prioritize finding/identifying uncontaminated (safe) vials',
+    'Prioritize avoiding/identifying contaminated (dangerous) vials',
+    'Test as many vials as possible',
+    'Ask the assistant multiple questions'
+];
+
+// The correct answer depends on goal condition (index 0 for find, 1 for avoid)
+const goalCheckCorrectIndex = goalCondition === 'find' ? 0 : 1;
+
+const comprehensionCheck1 = {
+    type: jsPsychSurveyMultiChoice,
+    questions: [
+        {
+            prompt: '<strong>Comprehension Check 1:</strong> What is your main goal in this task?',
+            name: 'goal_check',
+            options: goalCheckOptions,
+            required: true
+        }
+    ],
+    data: { trial_type: 'comprehension_check_1' },
+    on_finish: function(data) {
+        comp1Attempts++;
+        const response = data.response.goal_check;
+        data.correct = response === goalCheckOptions[goalCheckCorrectIndex];
+        comp1Passed = data.correct;
+        console.log('Comprehension check 1:', {
+            response: response,
+            correctAnswer: goalCheckOptions[goalCheckCorrectIndex],
+            isCorrect: data.correct,
+            attempts: comp1Attempts
+        });
+    }
+};
+
+const comprehensionFeedback1 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        if (comp1Passed) {
+            return `<p class="check-correct">✓ Correct! Let's continue to the next check.</p>`;
+        } else {
+            const attemptsLeft = maxComprehensionAttempts - comp1Attempts;
+            if (attemptsLeft > 0) {
+                return `<p class="check-incorrect">That's not quite right.</p>
+                        <p>Remember: Your goal is to <strong>${goalCondition === 'find' ? 'find uncontaminated vials' : 'avoid contaminated vials'}</strong>.</p>
+                        <p>You have ${attemptsLeft} attempt(s) remaining.</p>`;
+            } else {
+                return `<p class="check-incorrect">You have exceeded the maximum attempts.</p>
+                        <p>Unfortunately, you cannot continue with this study.</p>`;
+            }
+        }
+    },
+    choices: function() {
+        if (comp1Passed) {
+            return ['Continue'];
+        } else if (comp1Attempts >= maxComprehensionAttempts) {
+            return ['Exit Study'];
+        } else {
+            return ['Try Again'];
+        }
+    },
+    data: { trial_type: 'comprehension_feedback_1' },
+    on_finish: function(data) {
+        if (!comp1Passed && comp1Attempts >= maxComprehensionAttempts) {
+            jsPsych.endExperiment('Thank you for your time. You did not pass the comprehension checks.');
+        }
+    }
+};
+
+const comprehensionLoop1 = {
+    timeline: [comprehensionCheck1, comprehensionFeedback1],
+    loop_function: function() {
+        return !comp1Passed && comp1Attempts < maxComprehensionAttempts;
+    }
+};
+timeline.push(comprehensionLoop1);
+
+let comp2Attempts = 0;
+let comp2Passed = false;
+
+const comprehensionCheck2 = {
+    type: jsPsychSurveyMultiChoice,
+    questions: [
+        {
+            prompt: '<strong>Comprehension Check 2:</strong> Does your lab assistant know the status of ALL the vials?',
+            name: 'assistant_check',
+            options: [
+                'Yes, the assistant knows everything',
+                'No, the assistant only has partial information',
+                'The assistant knows nothing',
+                'It depends on the trial'
+            ],
+            required: true
+        }
+    ],
+    data: { trial_type: 'comprehension_check_2' },
+    on_finish: function(data) {
+        comp2Attempts++;
+        const response = data.response.assistant_check;
+        data.correct = response === 'No, the assistant only has partial information';
+        comp2Passed = data.correct;
+    }
+};
+
+const comprehensionFeedback2 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        if (comp2Passed) {
+            return `<p class="check-correct">✓ Correct! You're ready to begin.</p>`;
+        } else {
+            const attemptsLeft = maxComprehensionAttempts - comp2Attempts;
+            if (attemptsLeft > 0) {
+                return `<p class="check-incorrect">That's not quite right.</p>
+                        <p>Remember: The assistant has tested <strong>some but not all</strong> of the vials, so they only have <strong>partial information</strong>.</p>
+                        <p>You have ${attemptsLeft} attempt(s) remaining.</p>`;
+            } else {
+                return `<p class="check-incorrect">You have exceeded the maximum attempts.</p>
+                        <p>Unfortunately, you cannot continue with this study.</p>`;
+            }
+        }
+    },
+    choices: function() {
+        if (comp2Passed) {
+            return ['Continue to Practice'];
+        } else if (comp2Attempts >= maxComprehensionAttempts) {
+            return ['Exit Study'];
+        } else {
+            return ['Try Again'];
+        }
+    },
+    data: { trial_type: 'comprehension_feedback_2' },
+    on_finish: function(data) {
+        if (!comp2Passed && comp2Attempts >= maxComprehensionAttempts) {
+            jsPsych.endExperiment('Thank you for your time. You did not pass the comprehension checks.');
+        }
+    }
+};
+
+const comprehensionLoop2 = {
+    timeline: [comprehensionCheck2, comprehensionFeedback2],
+    loop_function: function() {
+        return !comp2Passed && comp2Attempts < maxComprehensionAttempts;
+    }
+};
+timeline.push(comprehensionLoop2);
+
+// -----------------------------------------------------------------------------
+// PRACTICE TRIAL
+// -----------------------------------------------------------------------------
+
+const practiceIntro = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+        <div class="instruction-container">
+            <h2 class="instruction-title">🧪 Practice Trial</h2>
+            <p class="instruction-text">Let's do one practice trial to make sure you understand the task.</p>
+            <p class="instruction-text">This won't count toward your data.</p>
+        </div>
+    `,
+    choices: ['Start Practice'],
+    data: { trial_type: 'practice_intro' }
+};
+timeline.push(practiceIntro);
+
+// Create streamlined trial stimulus
+function createTrialStimulus(baseRate, isPractice = false, trialNum = null, totalTrials = null) {
+    const trialHeader = (!isPractice && trialNum !== null)
+        ? `<div class="trial-header">Trial ${trialNum} of ${totalTrials}</div>`
+        : '';
+
+    const practiceBadge = isPractice
+        ? '<div class="practice-badge">Practice Trial</div>'
+        : '';
+
+    return `
+        <div class="trial-container">
+            ${trialHeader}
+            ${practiceBadge}
+            ${renderVialRack()}
+            <div class="info-card">
+                <span class="icon">📊</span>
+                <span>${getBaseRateText(baseRate)}</span>
+            </div>
+            <div class="goal-card ${getGoalConfig().cssClass}">
+                <span class="icon">${getGoalConfig().icon}</span>
+                <span><strong>Your Goal:</strong> ${getGoalConfig().text}</span>
+            </div>
+            <div class="question-prompt">
+                What would you ask your assistant?
+            </div>
+        </div>
+    `;
+}
+
+// Track button order for proper response decoding
+let practiceButtonOrder = [...questionOptions];
+let practiceChoice = null;
+
+// Practice trial scenario
+const practiceScenario = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: createTrialStimulus(0.5, true),
+    choices: questionOptions,
+    on_start: function(trial) {
+        practiceButtonOrder = jsPsych.randomization.shuffle([...questionOptions]);
+        trial.choices = practiceButtonOrder;
+    },
+    data: {
+        trial_type: 'practice_trial',
+        base_rate: 0.5,
+        is_practice: true
+    },
+    on_finish: function(data) {
+        data.button_order = practiceButtonOrder;
+        data.chosen_question = practiceButtonOrder[data.response];
+        data.chose_which_contaminated = data.chosen_question === "Which vials are contaminated?";
+        data.chose_which_uncontaminated = data.chosen_question === "Which vials are uncontaminated?";
+        practiceChoice = data.chosen_question;
+    },
+    response_ends_trial: true,
+    button_html: (choice) => `<button class="jspsych-btn" style="min-width: 300px;">${choice}</button>`,
+    on_load: disableButtonsTemporarily
+};
+timeline.push(practiceScenario);
+
+// Practice feedback with visual response demonstration
+const practiceFeedback = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+        const askedContaminated = practiceChoice === "Which vials are contaminated?";
+
+        // Create visual representation of a simulated response
+        let vialStates, responseText, insightText;
+
+        if (askedContaminated) {
+            // Show contaminated vials revealed
+            vialStates = ['unknown', 'danger', 'unknown', 'unknown', 'danger'];
+            if (nVials === 4) vialStates = ['unknown', 'danger', 'unknown', 'danger'];
+            responseText = `"I've tested some vials. Vials ${nVials === 5 ? '2 and 5' : '2 and 4'} are <strong style="color: var(--danger-color);">contaminated</strong>. I haven't tested the others."`;
+            insightText = goalCondition === 'find'
+                ? `<strong>Think about it:</strong> You now know which vials to <strong>avoid</strong>... but do you know which vial is definitely <strong>safe</strong> to use?`
+                : `<strong>Think about it:</strong> You now know some vials are <strong>dangerous</strong>. You can pick from the untested ones, but there might be more contaminated vials you don't know about.`;
+        } else {
+            // Show uncontaminated vial revealed
+            vialStates = ['safe', 'unknown', 'unknown', 'unknown', 'unknown'];
+            if (nVials === 4) vialStates = ['safe', 'unknown', 'unknown', 'unknown'];
+            responseText = `"I've tested some vials. Vial 1 is <strong style="color: var(--safe-color);">uncontaminated</strong>. I haven't tested the others."`;
+            insightText = goalCondition === 'find'
+                ? `<strong>Think about it:</strong> You now know one <strong>safe</strong> option! But there might be other safe vials you don't know about.`
+                : `<strong>Think about it:</strong> You know vial 1 is safe, but you don't know which of the others might be <strong>contaminated</strong>.`;
+        }
+
+        return `
+            <div class="instruction-container fade-in">
+                <h2 class="instruction-title">📋 Your Assistant's Response</h2>
+                <div class="assistant-avatar">👨‍🔬</div>
+                <div class="assistant-response">
+                    <p class="speech-bubble">${responseText}</p>
+                </div>
+                ${renderVialRack(vialStates)}
+                <div class="insight-box">
+                    <p>${insightText}</p>
+                </div>
+                <p class="instruction-text" style="margin-top: 25px;">
+                    In real trials, you won't see the response—you'll just choose your question and move on.<br>
+                    Think carefully about which question would be most helpful for <strong>your goal</strong>.
+                </p>
+            </div>
+        `;
+    },
+    choices: ['Begin Real Trials'],
+    data: { trial_type: 'practice_feedback' }
+};
+timeline.push(practiceFeedback);
+
+// -----------------------------------------------------------------------------
+// MAIN EXPERIMENTAL TRIALS
+// -----------------------------------------------------------------------------
+
+function generateTrialList() {
+    let trials = [];
+
+    if (expVersion === 'exp1') {
+        const baseRates = [0.2, 0.5, 0.8];
+        const trialsPerBaseRate = 4;
+
+        for (let br of baseRates) {
+            for (let i = 0; i < trialsPerBaseRate; i++) {
+                trials.push({
+                    base_rate: br,
+                    trial_id: `exp1_br${br}_rep${i+1}`
+                });
+            }
+        }
+    } else {
+        for (let i = 0; i < 8; i++) {
+            trials.push({
+                base_rate: 0.5,
+                trial_id: `exp2_rep${i+1}`
+            });
+        }
+    }
+
+    return jsPsych.randomization.shuffle(trials);
+}
+
+const trialList = generateTrialList();
+const totalTrials = trialList.length;
+
+let currentTrialButtonOrder = [];
+
+const mainTrialProcedure = {
+    timeline: [
+        {
+            type: jsPsychHtmlButtonResponse,
+            stimulus: function() {
+                const baseRate = jsPsych.evaluateTimelineVariable('base_rate');
+                const trialIndex = jsPsych.evaluateTimelineVariable('trial_index');
+                return createTrialStimulus(baseRate, false, trialIndex + 1, totalTrials);
+            },
+            choices: questionOptions,
+            on_start: function(trial) {
+                currentTrialButtonOrder = jsPsych.randomization.shuffle([...questionOptions]);
+                trial.choices = currentTrialButtonOrder;
+            },
+            data: {
+                trial_type: 'main_trial',
+                trial_id: jsPsych.timelineVariable('trial_id'),
+                base_rate: jsPsych.timelineVariable('base_rate'),
+                trial_index: jsPsych.timelineVariable('trial_index'),
+                exp_version: expVersion,
+                goal_condition: goalCondition,
+                decision_structure: decisionStructure
+            },
+            on_finish: function(data) {
+                data.button_order = [...currentTrialButtonOrder];
+                data.chosen_question = currentTrialButtonOrder[data.response];
+                data.chose_which_contaminated = data.chosen_question === "Which vials are contaminated?";
+                data.chose_which_uncontaminated = data.chosen_question === "Which vials are uncontaminated?";
+            },
+            button_html: (choice) => `<button class="jspsych-btn" style="min-width: 300px;">${choice}</button>`,
+            on_load: disableButtonsTemporarily,
+            post_trial_gap: 0
+        },
+        {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div style="font-size: 48px;">+</div>',
+            choices: "NO_KEYS",
+            trial_duration: 500,
+            data: { trial_type: 'iti' }
+        }
+    ],
+    timeline_variables: trialList.map((trial, index) => ({
+        ...trial,
+        trial_index: index
+    }))
+};
+timeline.push(mainTrialProcedure);
+
+// -----------------------------------------------------------------------------
+// POST-TASK QUESTIONS
+// -----------------------------------------------------------------------------
+
+const strategyProbe = {
+    type: jsPsychSurveyText,
+    questions: [
+        {
+            prompt: '<h3>Strategy Question</h3><p>How did you decide which question to ask on each trial? Please describe your reasoning or strategy:</p>',
+            name: 'strategy',
+            rows: 5,
+            columns: 60,
+            required: true
+        }
+    ],
+    data: { trial_type: 'strategy_probe' }
+};
+timeline.push(strategyProbe);
+
+// -----------------------------------------------------------------------------
+// DEMOGRAPHICS
+// -----------------------------------------------------------------------------
+
+const demographics = {
+    type: jsPsychSurveyHtmlForm,
+    html: `
+        <h2>Demographics</h2>
+        <p>Please answer the following questions about yourself.</p>
+
+        <div style="margin: 20px 0;">
+            <label for="age"><strong>Age:</strong></label><br>
+            <input type="number" id="age" name="age" min="18" max="100" required
+                   style="padding: 8px; width: 100px; margin-top: 5px;">
+        </div>
+
+        <div style="margin: 20px 0;">
+            <label><strong>Gender:</strong></label><br>
+            <select name="gender" required style="padding: 8px; width: 200px; margin-top: 5px;">
+                <option value="">-- Select --</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="non-binary">Non-binary</option>
+                <option value="other">Other</option>
+                <option value="prefer_not">Prefer not to say</option>
+            </select>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <label><strong>Highest level of education completed:</strong></label><br>
+            <select name="education" required style="padding: 8px; width: 300px; margin-top: 5px;">
+                <option value="">-- Select --</option>
+                <option value="high_school">High school or equivalent</option>
+                <option value="some_college">Some college</option>
+                <option value="associates">Associate's degree</option>
+                <option value="bachelors">Bachelor's degree</option>
+                <option value="masters">Master's degree</option>
+                <option value="doctorate">Doctorate or professional degree</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <label><strong>Is English your native language?</strong></label><br>
+            <select name="native_english" required style="padding: 8px; width: 200px; margin-top: 5px;">
+                <option value="">-- Select --</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+            </select>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <label for="native_language"><strong>What is your native language?</strong></label><br>
+            <input type="text" id="native_language" name="native_language" required
+                   style="padding: 8px; width: 250px; margin-top: 5px;">
+        </div>
+    `,
+    data: { trial_type: 'demographics' }
+};
+timeline.push(demographics);
+
+// -----------------------------------------------------------------------------
+// DEBRIEF
+// -----------------------------------------------------------------------------
+
+const debrief = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+        <h2>Study Complete - Debriefing</h2>
+        <div class="instructions-box">
+            <p><strong>Thank you for participating!</strong></p>
+
+            <p><strong>Purpose of this study:</strong></p>
+            <p>This study investigates how people choose to phrase questions when seeking information.
+            Specifically, we are interested in whether people's goals influence which question they ask—for example,
+            whether asking "Which are contaminated?" vs. "Which are uncontaminated?" depends on what the person
+            wants to accomplish.</p>
+
+            <p><strong>What we're studying:</strong></p>
+            <p>We hypothesize that people strategically choose question framing to maximize the usefulness of
+            the answer for their specific decision problem. Your responses will help us understand the
+            cognitive processes underlying question formulation.</p>
+
+            <p><strong>Confidentiality:</strong></p>
+            <p>Your responses are completely anonymous and will only be used for research purposes.
+            No identifying information has been collected.</p>
+
+            <p>If you have any questions about this research, please contact [researcher email].</p>
+        </div>
+    `,
+    choices: ['Finish and Get Completion Code'],
+    data: { trial_type: 'debrief' }
+};
+timeline.push(debrief);
+
+// =============================================================================
+// RUN EXPERIMENT
+// =============================================================================
+
+jsPsych.run(timeline);
+
+</script>
+</html>
