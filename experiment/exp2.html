@@ -607,37 +607,34 @@ const prolificPID = urlParams.get('PROLIFIC_PID') || 'unknown';
 const studyID = urlParams.get('STUDY_ID') || 'unknown';
 const sessionID = urlParams.get('SESSION_ID') || 'unknown';
 
-// Experiment version: 'exp1' or 'exp2'
-let expVersion = urlParams.get('exp') || null;
+// Experiment 2: Goal (between-subjects) x Decision Structure (between-subjects)
+const expVersion = 'exp2';
 
 // Condition assignment (can be set via URL or random)
 let goalCondition = urlParams.get('goal') || null;  // 'find' or 'avoid'
-let decisionStructure = urlParams.get('structure') || null;  // 'singleton' or 'set_id' (exp2 only)
+let decisionStructure = urlParams.get('structure') || null;  // 'singleton' or 'set_id'
 
 // Random assignment if not specified
-if (!expVersion) {
-    expVersion = Math.random() < 0.5 ? 'exp1' : 'exp2';
-}
-
 if (!goalCondition) {
     goalCondition = Math.random() < 0.5 ? 'find' : 'avoid';
 }
 
-if (expVersion === 'exp2' && !decisionStructure) {
+if (!decisionStructure) {
     decisionStructure = Math.random() < 0.5 ? 'singleton' : 'set_id';
-}
-
-// For exp1, decision structure is always singleton
-if (expVersion === 'exp1') {
-    decisionStructure = 'singleton';
 }
 
 // Test mode - skip button delays for faster testing
 const testMode = urlParams.get('testMode') === 'true';
 const buttonDisableTime = testMode ? 100 : 2000;
 
-// Number of vials
-const nVials = expVersion === 'exp1' ? 5 : 4;
+// Number of vials (4 for exp2)
+const nVials = 4;
+
+// Question options for forced choice
+const questionOptions = [
+    "Which vials are contaminated?",
+    "Which vials are uncontaminated?"
+];
 
 // =============================================================================
 // VIAL RENDERING HELPERS
@@ -672,17 +669,8 @@ function renderVialRack(states = null, n = nVials) {
 // STIMULUS TEXT CONFIGURATIONS
 // =============================================================================
 
-function getBaseRateText(baseRate) {
-    if (expVersion === 'exp1') {
-        const texts = {
-            0.2: `About <strong>1</strong> of ${nVials} is likely contaminated`,
-            0.5: `About <strong>2-3</strong> of ${nVials} are likely contaminated`,
-            0.8: `About <strong>4</strong> of ${nVials} are likely contaminated`
-        };
-        return texts[baseRate];
-    } else {
-        return `About <strong>2</strong> of ${nVials} are likely contaminated`;
-    }
+function getBaseRateText() {
+    return `About <strong>2</strong> of ${nVials} are likely contaminated`;
 }
 
 // Consolidated goal configuration
@@ -985,17 +973,18 @@ function getVisualInstructionPages() {
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">❓ Your Question</h2>
-            <p class="instruction-text">Before deciding, you can ask your assistant a question about the vials.</p>
-            <p class="instruction-text">You'll complete a sentence that starts with:</p>
-            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin: 25px 0; font-size: 22px;">
-                <span>"Which vials are</span>
-                <span style="border-bottom: 2px solid #333; min-width: 150px; display: inline-block;">&nbsp;</span>
-                <span>?"</span>
+            <p class="instruction-text">Before deciding, you can ask your assistant <strong>ONE</strong> of two questions:</p>
+            <div style="display: flex; justify-content: center; gap: 20px; margin: 25px 0; flex-wrap: wrap;">
+                <div class="question-btn" style="cursor: default;">
+                    "Which vials are <strong style="color: var(--danger-color);">contaminated</strong>?"
+                </div>
+                <div class="question-btn" style="cursor: default;">
+                    "Which vials are <strong style="color: var(--safe-color);">uncontaminated</strong>?"
+                </div>
             </div>
-            <p class="instruction-text">Type your completion in the text box provided.</p>
             <p class="instruction-text">Think about which question would give you the most useful information for <strong>your goal</strong>.</p>
             <div class="instruction-emphasis">
-                You'll complete <strong>${expVersion === 'exp1' ? '3' : '8'} trials</strong> (plus one practice trial).
+                You'll complete <strong>1 trial</strong> (plus one practice trial).
             </div>
         </div>
     `);
@@ -1188,81 +1177,58 @@ const practiceIntro = {
 timeline.push(practiceIntro);
 
 // Create streamlined trial stimulus
-function createTrialStimulus(baseRate, isPractice = false, trialNum = null, totalTrials = null) {
-    const trialHeader = (!isPractice && trialNum !== null)
-        ? `<div class="trial-header">Trial ${trialNum} of ${totalTrials}</div>`
-        : '';
-
+function createTrialStimulus(isPractice = false) {
     const practiceBadge = isPractice
         ? '<div class="practice-badge">Practice Trial</div>'
         : '';
 
-    const scenarioIntro = isPractice
-        ? ''
-        : '<p style="font-size: 18px; color: #555; margin-bottom: 15px;">Now consider a new scenario:</p>';
-
     return `
         <div class="trial-container">
-            ${trialHeader}
             ${practiceBadge}
-            ${scenarioIntro}
             ${renderVialRack()}
             <div class="info-card">
                 <span class="icon">📊</span>
-                <span>${getBaseRateText(baseRate)}</span>
+                <span>${getBaseRateText()}</span>
             </div>
             <div class="goal-card ${getGoalConfig().cssClass}">
                 <span class="icon">${getGoalConfig().icon}</span>
                 <span><strong>Your Goal:</strong> ${getGoalConfig().text}</span>
             </div>
+            <div class="question-prompt">
+                What would you ask your assistant?
+            </div>
         </div>
     `;
 }
 
-// Track response for practice feedback
-let practiceResponse = null;
+// Track button order and choice for practice feedback
+let practiceButtonOrder = [...questionOptions];
+let practiceChoice = null;
 
-// Practice trial scenario - sentence completion
+// Practice trial scenario - forced choice
 const practiceScenario = {
-    type: jsPsychSurveyHtmlForm,
-    html: function() {
-        return `
-            ${createTrialStimulus(0.5, true)}
-            <div class="sentence-completion">
-                <span>"Which vials are</span>
-                <input type="text" id="completion" name="completion" placeholder="type here..." autocomplete="off" required>
-                <span>?"</span>
-            </div>
-        `;
+    type: jsPsychHtmlButtonResponse,
+    stimulus: createTrialStimulus(true),
+    choices: questionOptions,
+    on_start: function(trial) {
+        practiceButtonOrder = jsPsych.randomization.shuffle([...questionOptions]);
+        trial.choices = practiceButtonOrder;
     },
-    autofocus: 'completion',
-    button_label: 'Submit',
     data: {
         trial_type: 'practice_trial',
         base_rate: 0.5,
         is_practice: true
     },
-    on_load: function() {
-        // Disable submit button temporarily for minimum viewing time
-        const submitBtn = document.querySelector('#jspsych-survey-html-form-next');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            setTimeout(() => {
-                submitBtn.disabled = false;
-                submitBtn.style.opacity = '1';
-            }, buttonDisableTime);
-        }
-    },
     on_finish: function(data) {
-        const response = data.response.completion.trim().toLowerCase();
-        data.raw_response = data.response.completion.trim();
-        data.response_lowercase = response;
-        // Categorize response
-        data.chose_which_contaminated = response.includes('contaminated') || response.includes('dangerous') || response.includes('unsafe');
-        data.chose_which_uncontaminated = response.includes('uncontaminated') || response.includes('safe') || response.includes('clean');
-        practiceResponse = data.raw_response;
-    }
+        data.button_order = practiceButtonOrder;
+        data.chosen_question = practiceButtonOrder[data.response];
+        data.chose_which_contaminated = data.chosen_question === "Which vials are contaminated?";
+        data.chose_which_uncontaminated = data.chosen_question === "Which vials are uncontaminated?";
+        practiceChoice = data.chosen_question;
+    },
+    response_ends_trial: true,
+    button_html: (choice) => `<button class="jspsych-btn" style="min-width: 300px;">${choice}</button>`,
+    on_load: disableButtonsTemporarily
 };
 timeline.push(practiceScenario);
 
@@ -1270,25 +1236,21 @@ timeline.push(practiceScenario);
 const practiceFeedback = {
     type: jsPsychHtmlButtonResponse,
     stimulus: function() {
-        // Determine if they asked about contaminated or uncontaminated based on their response
-        const response = practiceResponse ? practiceResponse.toLowerCase() : '';
-        const askedContaminated = response.includes('contaminated') || response.includes('dangerous') || response.includes('unsafe') || response.includes('bad');
+        const askedContaminated = practiceChoice === "Which vials are contaminated?";
 
         // Create visual representation of a simulated response
         let vialStates, responseText, insightText;
 
         if (askedContaminated) {
-            // Show contaminated vials revealed
-            vialStates = ['unknown', 'danger', 'unknown', 'unknown', 'danger'];
-            if (nVials === 4) vialStates = ['unknown', 'danger', 'unknown', 'danger'];
-            responseText = `"I've tested some vials. Vials ${nVials === 5 ? '2 and 5' : '2 and 4'} are <strong style="color: var(--danger-color);">contaminated</strong>. I haven't tested the others."`;
+            // Show contaminated vials revealed (4 vials for exp2)
+            vialStates = ['unknown', 'danger', 'unknown', 'danger'];
+            responseText = `"I've tested some vials. Vials 2 and 4 are <strong style="color: var(--danger-color);">contaminated</strong>. I haven't tested the others."`;
             insightText = goalCondition === 'find'
                 ? `<strong>Think about it:</strong> You now know which vials to <strong>avoid</strong>... but do you know which vial is definitely <strong>safe</strong> to use?`
                 : `<strong>Think about it:</strong> You now know some vials are <strong>dangerous</strong>. You can pick from the untested ones, but there might be more contaminated vials you don't know about.`;
         } else {
-            // Show uncontaminated vial revealed
-            vialStates = ['safe', 'unknown', 'unknown', 'unknown', 'unknown'];
-            if (nVials === 4) vialStates = ['safe', 'unknown', 'unknown', 'unknown'];
+            // Show uncontaminated vial revealed (4 vials for exp2)
+            vialStates = ['safe', 'unknown', 'unknown', 'unknown'];
             responseText = `"I've tested some vials. Vial 1 is <strong style="color: var(--safe-color);">uncontaminated</strong>. I haven't tested the others."`;
             insightText = goalCondition === 'find'
                 ? `<strong>Think about it:</strong> You now know one <strong>safe</strong> option! But there might be other safe vials you don't know about.`
@@ -1298,7 +1260,7 @@ const practiceFeedback = {
         return `
             <div class="instruction-container fade-in">
                 <h2 class="instruction-title">📋 Your Assistant's Response</h2>
-                <p style="margin-bottom: 10px;">You asked: <strong>"Which vials are ${practiceResponse || '...'}?"</strong></p>
+                <p style="margin-bottom: 10px;">You asked: <strong>${practiceChoice || '...'}</strong></p>
                 <div class="assistant-avatar">👨‍🔬</div>
                 <div class="assistant-response">
                     <p class="speech-bubble">${responseText}</p>
@@ -1308,113 +1270,49 @@ const practiceFeedback = {
                     <p>${insightText}</p>
                 </div>
                 <p class="instruction-text" style="margin-top: 25px;">
-                    In real trials, you won't see the response—you'll just complete your question and move on.<br>
+                    In real trials, you won't see the response—you'll just choose your question and move on.<br>
                     Think carefully about which question would be most helpful for <strong>your goal</strong>.
                 </p>
             </div>
         `;
     },
-    choices: ['Begin Real Trials'],
+    choices: ['Begin Trial'],
     data: { trial_type: 'practice_feedback' }
 };
 timeline.push(practiceFeedback);
 
 // -----------------------------------------------------------------------------
-// MAIN EXPERIMENTAL TRIALS
+// MAIN EXPERIMENTAL TRIAL (single trial for exp2)
 // -----------------------------------------------------------------------------
 
-function generateTrialList() {
-    let trials = [];
+let mainTrialButtonOrder = [];
 
-    if (expVersion === 'exp1') {
-        const baseRates = [0.2, 0.5, 0.8];
-        const trialsPerBaseRate = 1;
-
-        for (let br of baseRates) {
-            for (let i = 0; i < trialsPerBaseRate; i++) {
-                trials.push({
-                    base_rate: br,
-                    trial_id: `exp1_br${br}_rep${i+1}`
-                });
-            }
-        }
-    } else {
-        for (let i = 0; i < 8; i++) {
-            trials.push({
-                base_rate: 0.5,
-                trial_id: `exp2_rep${i+1}`
-            });
-        }
-    }
-
-    return jsPsych.randomization.shuffle(trials);
-}
-
-const trialList = generateTrialList();
-const totalTrials = trialList.length;
-
-const mainTrialProcedure = {
-    timeline: [
-        {
-            type: jsPsychSurveyHtmlForm,
-            html: function() {
-                const baseRate = jsPsych.evaluateTimelineVariable('base_rate');
-                const trialIndex = jsPsych.evaluateTimelineVariable('trial_index');
-                return `
-                    ${createTrialStimulus(baseRate, false, trialIndex + 1, totalTrials)}
-                    <div class="sentence-completion">
-                        <span>"Which vials are</span>
-                        <input type="text" id="completion" name="completion" placeholder="type here..." autocomplete="off" required>
-                        <span>?"</span>
-                    </div>
-                `;
-            },
-            autofocus: 'completion',
-            button_label: 'Submit',
-            data: {
-                trial_type: 'main_trial',
-                trial_id: jsPsych.timelineVariable('trial_id'),
-                base_rate: jsPsych.timelineVariable('base_rate'),
-                trial_index: jsPsych.timelineVariable('trial_index'),
-                exp_version: expVersion,
-                goal_condition: goalCondition,
-                decision_structure: decisionStructure
-            },
-            on_load: function() {
-                // Disable submit button temporarily for minimum viewing time
-                const submitBtn = document.querySelector('#jspsych-survey-html-form-next');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.style.opacity = '0.5';
-                    setTimeout(() => {
-                        submitBtn.disabled = false;
-                        submitBtn.style.opacity = '1';
-                    }, buttonDisableTime);
-                }
-            },
-            on_finish: function(data) {
-                const response = data.response.completion.trim().toLowerCase();
-                data.raw_response = data.response.completion.trim();
-                data.response_lowercase = response;
-                // Categorize response
-                data.chose_which_contaminated = response.includes('contaminated') || response.includes('dangerous') || response.includes('unsafe');
-                data.chose_which_uncontaminated = response.includes('uncontaminated') || response.includes('safe') || response.includes('clean');
-            }
-        },
-        {
-            type: jsPsychHtmlKeyboardResponse,
-            stimulus: '<div style="font-size: 48px;">+</div>',
-            choices: "NO_KEYS",
-            trial_duration: 500,
-            data: { trial_type: 'iti' }
-        }
-    ],
-    timeline_variables: trialList.map((trial, index) => ({
-        ...trial,
-        trial_index: index
-    }))
+const mainTrial = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: createTrialStimulus(false),
+    choices: questionOptions,
+    on_start: function(trial) {
+        mainTrialButtonOrder = jsPsych.randomization.shuffle([...questionOptions]);
+        trial.choices = mainTrialButtonOrder;
+    },
+    data: {
+        trial_type: 'main_trial',
+        trial_id: 'exp2_trial1',
+        base_rate: 0.5,
+        exp_version: expVersion,
+        goal_condition: goalCondition,
+        decision_structure: decisionStructure
+    },
+    on_finish: function(data) {
+        data.button_order = [...mainTrialButtonOrder];
+        data.chosen_question = mainTrialButtonOrder[data.response];
+        data.chose_which_contaminated = data.chosen_question === "Which vials are contaminated?";
+        data.chose_which_uncontaminated = data.chosen_question === "Which vials are uncontaminated?";
+    },
+    button_html: (choice) => `<button class="jspsych-btn" style="min-width: 300px;">${choice}</button>`,
+    on_load: disableButtonsTemporarily
 };
-timeline.push(mainTrialProcedure);
+timeline.push(mainTrial);
 
 // -----------------------------------------------------------------------------
 // POST-TASK QUESTIONS
@@ -1424,7 +1322,7 @@ const strategyProbe = {
     type: jsPsychSurveyText,
     questions: [
         {
-            prompt: '<h3>Strategy Question</h3><p>How did you decide how to complete your question on each trial? Please describe your reasoning or strategy:</p>',
+            prompt: '<h3>Strategy Question</h3><p>How did you decide which question to ask? Please describe your reasoning or strategy:</p>',
             name: 'strategy',
             rows: 5,
             columns: 60,
