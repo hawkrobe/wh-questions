@@ -114,18 +114,25 @@ def singleton_utility(g, w, a):
 
 @jax.jit
 def set_id_utility(g, w, a):
-    """Utility of guessing bitmask a as uncontaminated vials. Returns recall on goal-relevant category."""
-    # FIND: recall on uncontaminated vials
+    """Utility of guessing bitmask a as uncontaminated vials. Returns f1 score on goal-relevant category."""
+    # FIND: f1 score on uncontaminated vials
     tp_uncont = popcount(w & a)
-    total_uncont = popcount(w)
-    recall_uncont = np.where(total_uncont > 0, tp_uncont / total_uncont, 1.0)
+    total_uncont_real = popcount(w)
+    total_uncont_guess = popcount(a)
+    recall_uncont = np.where(total_uncont_real > 0, tp_uncont / total_uncont_real, 1.0)
+    precision_uncont = np.where(total_uncont_guess > 0, tp_uncont/total_uncont_guess, 1.0)
+    f1_uncont = 0.5*recall_uncont + 0.5*precision_uncont
 
-    # AVOID: recall on contaminated vials
+    # AVOID: f1 score on contaminated vials
     tp_cont = popcount((ALL_VIALS ^ w) & (ALL_VIALS ^ a))
-    total_cont = popcount(ALL_VIALS ^ w)
-    recall_cont = np.where(total_cont > 0, tp_cont / total_cont, 1.0)
+    total_cont_real = popcount(ALL_VIALS ^ w)
+    total_cont_guess = popcount(ALL_VIALS ^ a)
+    recall_cont = np.where(total_cont_real > 0, tp_cont / total_cont_real, 1.0)
+    precision_cont = np.where(total_cont_guess > 0, tp_cont / total_cont_guess, 1.0)
+    f1_cont = 0.5*recall_cont + 0.5*precision_cont
 
-    return np.where(g == Goal.FIND_UNCONTAMINATED, recall_uncont, recall_cont)
+    return np.where(g == Goal.FIND_UNCONTAMINATED, f1_uncont, f1_cont)
+
 
 
 @jax.jit
