@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/@jspsych/plugin-preload@2.0.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-call-function@2.0.0"></script>
     <link href="https://unpkg.com/jspsych@8.0.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe"></script>		       
     <link href="styles.css" rel="stylesheet" type="text/css" />
     <script src="shared.js"></script>
 </head>
@@ -401,6 +402,18 @@ const debrief = {
 };
 timeline.push(debrief);
 
+
+const subject_id = jsPsych.randomization.randomID(10);
+const filename = `${subject_id}.csv`;
+
+const save_data = {
+    type: jsPsychPipe,
+    action: "save",
+    experiment_id: "KhHwy0u7dXlh",
+    filename: filename,
+    data_string: ()=>jsPsych.data.get().csv()
+};                          
+timeline.push(datapipe)		    
 // =============================================================================
 // RUN EXPERIMENT
 // =============================================================================
