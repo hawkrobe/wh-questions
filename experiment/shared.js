@@ -210,7 +210,7 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
     const optionsBase = decisionStructure === 'singleton'
         ? [
             'Find an uncontaminated vial to use',
-            'Avoid picking a contaminated vial',
+            'Find a contaminated vial to examine',
             'Test as many vials as possible',
             'Ask the assistant multiple questions'
         ]
@@ -221,7 +221,7 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
             'Ask the assistant multiple questions'
         ];
 
-    const correctAnswer = goalCondition === 'find' ? optionsBase[0] : optionsBase[1];
+    const correctAnswer = goalCondition === 'uncont' ? optionsBase[0] : optionsBase[1];
     let shuffledOptions = [];
 
     const check = {
@@ -229,7 +229,7 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
         questions: function() {
             shuffledOptions = jsPsych.randomization.shuffle([...optionsBase]);
             return [{
-                prompt: '<strong>Comprehension Check 1:</strong> What is your main goal in this task?',
+                prompt: '<strong>Comprehension Check 1:</strong> What is your <strong>main goal</strong> in this task?',
                 name: 'goal_check',
                 options: shuffledOptions,
                 required: true
@@ -255,11 +255,11 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
                 if (attemptsLeft > 0) {
                     let reminderText;
                     if (decisionStructure === 'singleton') {
-                        reminderText = goalCondition === 'find'
+                        reminderText = goalCondition === 'uncont'
                             ? 'find an uncontaminated vial to use'
-                            : 'avoid picking a contaminated vial';
+                            : 'find a contaminated vial to examine';
                     } else {
-                        reminderText = goalCondition === 'find'
+                        reminderText = goalCondition === 'uncont'
                             ? 'help Dr. Smith\'s experiment succeed'
                             : 'help the lab pass the safety inspection';
                     }
@@ -297,12 +297,12 @@ function createComprehensionCheck2(jsPsych) {
     let passed = false;
 
     const optionsBase = [
-        'Yes, the assistant knows everything',
-        'No, the assistant only has partial information',
-        'The assistant knows nothing',
-        'It depends on the trial'
+        'Yes, the assistant knows everything.',
+        'No, the assistant only has partial information.',
+        'The assistant knows nothing.',
+        'It depends on the trial.'
     ];
-    const correctAnswer = 'No, the assistant only has partial information';
+    const correctAnswer = 'No, the assistant only has partial information.';
     let shuffledOptions = [];
 
     const check = {
@@ -335,7 +335,7 @@ function createComprehensionCheck2(jsPsych) {
                 const attemptsLeft = maxAttempts - attempts;
                 if (attemptsLeft > 0) {
                     return `<p class="check-incorrect">That's not quite right.</p>
-                            <p>Remember: The assistant has tested <strong>some but not all</strong> of the vials, so they only have <strong>partial information</strong>.</p>
+                            <p>Remember: The assistant knows about <strong>some but not all</strong> of the vials, so they only have <strong>partial information</strong>.</p>
                             <p>You have ${attemptsLeft} attempt(s) remaining.</p>`;
                 } else {
                     return `<p class="check-incorrect">You have exceeded the maximum attempts.</p>

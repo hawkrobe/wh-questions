@@ -391,12 +391,12 @@
     font-size: 28px;
 }
 
-.goal-card.find-goal {
+.goal-card.uncont-goal {
     border-color: var(--safe-color);
     background: var(--safe-light);
 }
 
-.goal-card.avoid-goal {
+.goal-card.cont-goal {
     border-color: var(--danger-color);
     background: var(--danger-light);
 }
@@ -466,12 +466,12 @@
     min-width: 200px;
 }
 
-.outcome-box.success {
+.outcome-box.safe {
     background: var(--safe-light);
     border: 2px solid var(--safe-color);
 }
 
-.outcome-box.failure {
+.outcome-box.danger {
     background: var(--danger-light);
     border: 2px solid var(--danger-color);
 }
