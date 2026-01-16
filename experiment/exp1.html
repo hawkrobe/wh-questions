@@ -56,12 +56,12 @@ const nVials = 10;
 function getGoalConfig() {
     const configs = {
         uncont: {
-            text: 'Find a <strong>safe</strong> vial to use',
+            text: 'Run your experiment successfully',
             icon: '✓',
             cssClass: 'uncont-goal'
         },
         cont: {
-            text: 'Find a <strong>contaminated</strong> vial to examine',
+            text: 'Identify the contaminant',
             icon: '⚠',
             cssClass: 'cont-goal'
         }
@@ -141,8 +141,7 @@ function getVisualInstructionPages() {
         pages.push(`
             <div class="instruction-container fade-in">
                 <h2 class="instruction-title">🎯 Your Goal</h2>
-                <p class="instruction-text">Your goal is to find an <strong>uncontaminated</strong> vial, 
-                    so that you can run your experiment. 
+                <p class="instruction-text">Your goal is to run your experiment on an <strong>uncontaminated</strong> vial. 
                     You must pick <strong>ONE</strong> vial to use.</p>
                 <div class="outcome-demo">
                     <div class="outcome-box safe">
@@ -160,7 +159,7 @@ function getVisualInstructionPages() {
                 </div>
                 <div class="goal-card uncont-goal">
                     <span class="icon">✓</span>
-                    <span><strong>Your Goal:</strong> Find an uncontaminated vial to use</span>
+                    <span><strong>Your Goal:</strong> Do experiment with uncontaminated vial</span>
                 </div>
             </div>
         `);
@@ -168,8 +167,8 @@ function getVisualInstructionPages() {
         pages.push(`
             <div class="instruction-container fade-in">
                 <h2 class="instruction-title">🎯 Your Goal</h2>
-                <p class="instruction-text">Your goal is to find a <strong>contaminated</strong> vial, 
-                    so that you can determine what the contaminant was. 
+                <p class="instruction-text">Your goal is to examine a <strong>contaminated</strong> vial 
+                    to identify the contaminant. 
                     You must pick <strong>ONE vial</strong> to examine.</p>
                 <div class="outcome-demo">
                     <div class="outcome-box safe">
@@ -187,7 +186,7 @@ function getVisualInstructionPages() {
                 </div>
                 <div class="goal-card cont-goal">
                     <span class="icon">⚠</span>
-                    <span><strong>Your Goal:</strong> Find a contaminated vial to examine</span>
+                    <span><strong>Your Goal:</strong> Examine a contaminated vial</span>
                 </div>
             </div>
         `);
@@ -199,23 +198,22 @@ function getVisualInstructionPages() {
             <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
             <div class="assistant-avatar">👨‍🔬</div>
             <p class="instruction-text">Your lab assistant was in the lab. </p>
-            <p class="instruction-text">They saw the contamination happen, although they're not completely sure 
-                exactly which vials are contaminated and which are not.</p>
+            <p class="instruction-text">They saw the contamination happen, 
+                even though they're not completely sure which are contaminated and which are not.</p>
             <div class="partial-knowledge-demo">
                 <div class="knowledge-column">
                     <div style="display: flex; gap: 10px; justify-content: center;">
-                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
                         ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'safe', false)}
                         ${renderVial('', 'unknown', false)}
                         ${renderVial('', 'danger', false)}
                         ${renderVial('', 'unknown', false)}
                         ${renderVial('', 'danger', false)}
                     </div>
-                    <p style="font-size: 14px; color: #666;">Assistant does not know about all the vials</p>
+                    <p style="font-size: 14px; color: #666;">Assistant knows about some but not all the vials</p>
                 </div>
             </div>
-            <p class="instruction-text">They can only tell you about the vials they know about.</p>
         </div>
     `);
 
@@ -231,7 +229,7 @@ function getVisualInstructionPages() {
                 <span>?"</span>
             </div>
             <p class="instruction-text">Type your completion in the text box provided.</p>
-            <p class="instruction-text">Think about which question would give you the most useful information for <strong>your goal</strong>.</p>
+            <p class="instruction-text">Think about what question would give you the most useful information for <strong>your goal</strong>.</p>
             <div class="instruction-emphasis">
                 You'll complete <strong>3 trials</strong> with different expected contamination rates.
             </div>
@@ -270,14 +268,14 @@ function createTrialStimulus(baseRate, trialNum = null, totalTrials = null) {
     return `
         <div class="trial-container">
             <p class="instruction-text">Suppose that you know 
-                that the [contaminated] : [uncontaminated] ratio is ${baseRate * 10} : ${10 - (baseRate * 10)}.</p>
+                that ${baseRate * 10} vials are contaminated, and ${10 - (baseRate * 10)} are uncontaminated.</p>
             ${trialHeader}
             ${renderVialRack(nVials)}
-            ${renderProportionBar(baseRate, nVials)}
             <div class="goal-card ${getGoalConfig().cssClass}">
                 <span class="icon">${getGoalConfig().icon}</span>
                 <span><strong>Your Goal:</strong> ${getGoalConfig().text}</span>
             </div>
+            <p class="instruction-text">You ask your lab assistant: </p>
         </div>
     `;
 }

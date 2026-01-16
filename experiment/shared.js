@@ -58,7 +58,7 @@ function renderProportionBar(baseRate, nVials) {
                 </div>
                 <div class="legend-item">
                     <div class="legend-dot safe"></div>
-                    <span>Safe (${nSafe})</span>
+                    <span>Uncontaminated (${nSafe})</span>
                 </div>
             </div>
         </div>
@@ -209,8 +209,8 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
     // Options depend on decision structure
     const optionsBase = decisionStructure === 'singleton'
         ? [
-            'Find an uncontaminated vial to use',
-            'Find a contaminated vial to examine',
+            'Run experiment on an uncontaminated vial',
+            'Examine a contaminated vial',
             'Test as many vials as possible',
             'Ask the assistant multiple questions'
         ]
@@ -256,8 +256,8 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
                     let reminderText;
                     if (decisionStructure === 'singleton') {
                         reminderText = goalCondition === 'uncont'
-                            ? 'find an uncontaminated vial to use'
-                            : 'find a contaminated vial to examine';
+                            ? 'run your experiment successfully'
+                            : 'identify the contaminant';
                     } else {
                         reminderText = goalCondition === 'uncont'
                             ? 'help Dr. Smith\'s experiment succeed'
