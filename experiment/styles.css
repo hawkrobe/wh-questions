@@ -178,8 +178,8 @@
 }
 
 .vial.unknown .vial-status::after { content: '?'; color: #555; }
-.vial.safe .vial-status::after { content: '✓'; color: #1b5e20; }
-.vial.danger .vial-status::after { content: '☠'; color: #b71c1c; }
+/*.vial.safe .vial-status::after { content: '✓'; color: #1b5e20; }*/
+.vial.danger .vial-status::after { content: '∘˙○˚'; color: #b71c1c; }
 
 /* Tested indicator */
 .vial.tested::before {
