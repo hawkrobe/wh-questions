@@ -31,11 +31,11 @@ const sessionID = urlParams.get('SESSION_ID') || 'unknown';
 const expVersion = 'exp1';
 
 // Condition assignment (can be set via URL or random)
-let goalCondition = urlParams.get('goal') || null;  // 'find' or 'avoid'
+let goalCondition = urlParams.get('goal') || null;  // 'uncont' or 'cont'
 
 // Random assignment if not specified
 if (!goalCondition) {
-    goalCondition = Math.random() < 0.5 ? 'find' : 'avoid';
+    goalCondition = Math.random() < 0.5 ? 'uncont' : 'cont';
 }
 
 // Exp1 is always singleton decision structure
@@ -55,15 +55,15 @@ const nVials = 10;
 // Goal configuration (singleton only for exp1)
 function getGoalConfig() {
     const configs = {
-        find: {
+        uncont: {
             text: 'Find a <strong>safe</strong> vial to use',
             icon: '✓',
-            cssClass: 'find-goal'
+            cssClass: 'uncont-goal'
         },
-        avoid: {
-            text: 'Avoid picking a <strong>contaminated</strong> vial',
+        cont: {
+            text: 'Find a <strong>contaminated</strong> vial to examine',
             icon: '⚠',
-            cssClass: 'avoid-goal'
+            cssClass: 'cont-goal'
         }
     };
     return configs[goalCondition];
@@ -118,10 +118,9 @@ function getVisualInstructionPages() {
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">🧪 Your Lab Bench</h2>
-            <p class="instruction-text">You work in a laboratory with biological samples stored in vials.</p>
+            <p class="instruction-text">You work in a laboratory with chemical solutions stored in vials.</p>
             ${renderVialRack(nVials)}
             <p class="instruction-text">You have <strong>${nVials} vials</strong> on your bench.</p>
-            <p class="instruction-text" style="color: #666;">Currently, you don't know which are safe to use...</p>
         </div>
     `);
 
@@ -129,79 +128,37 @@ function getVisualInstructionPages() {
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">⚠️ The Problem</h2>
-            <p class="instruction-text">Some vials are <strong style="color: var(--safe-color);">safe</strong> (uncontaminated) and some are <strong style="color: var(--danger-color);">contaminated</strong> (dangerous).</p>
+            <p class="instruction-text">While you were taking a break outside, some of the vials got contaminated.</p>
+            ${renderVialRack(nVials, states = ['safe', 'danger', 'danger', 'danger', 'safe', 'safe', 'safe', 'danger', 'safe', 'danger'])}
             <p class="instruction-text">But you can't tell which is which just by looking!</p>
-            <div style="display: flex; justify-content: center; gap: 40px; margin: 30px 0;">
-                <div style="text-align: center;">
-                    ${renderVial('', 'safe', false)}
-                    <div style="margin-top: 10px; color: var(--safe-color); font-weight: bold;">Safe ✓</div>
-                </div>
-                <div style="text-align: center;">
-                    ${renderVial('', 'danger', false)}
-                    <div style="margin-top: 10px; color: var(--danger-color); font-weight: bold;">Contaminated ☠</div>
-                </div>
-                <div style="text-align: center;">
-                    ${renderVial('', 'unknown', false)}
-                    <div style="margin-top: 10px; color: var(--unknown-color); font-weight: bold;">Unknown ?</div>
-                </div>
-            </div>
-            <p class="instruction-text">You need to figure out which vials are which before making your decision.</p>
         </div>
     `);
 
-    // Page 3: Your Assistant
-    pages.push(`
-        <div class="instruction-container fade-in">
-            <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
-            <div class="assistant-avatar">👨‍🔬</div>
-            <p class="instruction-text">You have a lab assistant who can help. You can ask them <strong>ONE question</strong>.</p>
-            <div class="instruction-emphasis">
-                <strong>Important:</strong> Your assistant has tested <strong>some</strong> vials, but <strong>not all</strong> of them!
-            </div>
-            <div class="partial-knowledge-demo">
-                <div class="knowledge-column">
-                    <h4>Tested</h4>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'danger', false)}
-                    </div>
-                    <p style="font-size: 14px; color: #666;">Assistant knows these</p>
-                </div>
-                <div class="knowledge-column">
-                    <h4>Not Tested</h4>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'unknown', false)}
-                    </div>
-                    <p style="font-size: 14px; color: #666;">Assistant doesn't know these</p>
-                </div>
-            </div>
-            <p class="instruction-text">They can only tell you about vials they've tested.</p>
-        </div>
-    `);
+    
 
-    // Page 4: Your Goal (different for FIND vs AVOID)
-    if (goalCondition === 'find') {
+    // Page 3: Your Goal (different for UNCONT vs CONT)
+    if (goalCondition === 'uncont') {
         pages.push(`
             <div class="instruction-container fade-in">
                 <h2 class="instruction-title">🎯 Your Goal</h2>
-                <p class="instruction-text">Your experiment needs a clean sample. You must pick <strong>ONE vial</strong> to use.</p>
+                <p class="instruction-text">Your goal is to find an <strong>uncontaminated</strong> vial, 
+                    so that you can run your experiment. 
+                    You must pick <strong>ONE</strong> vial to use.</p>
                 <div class="outcome-demo">
-                    <div class="outcome-box success">
+                    <div class="outcome-box safe">
                         <div class="outcome-icon">✓</div>
                         ${renderVial('', 'safe', false)}
                         <div class="outcome-label">Success!</div>
-                        <p style="font-size: 14px; margin: 5px 0;">Picked a safe vial</p>
+                        <p style="font-size: 14px; margin: 5px 0;">Picked a safe vial!</p>
                     </div>
-                    <div class="outcome-box failure">
-                        <div class="outcome-icon">💥</div>
+                    <div class="outcome-box danger">
+                        <div class="outcome-icon">😢</div>
                         ${renderVial('', 'danger', false)}
                         <div class="outcome-label">Failure!</div>
-                        <p style="font-size: 14px; margin: 5px 0;">Sample ruined</p>
+                        <p style="font-size: 14px; margin: 5px 0;">Sample ruined!</p>
                     </div>
                 </div>
-                <div class="goal-card find-goal">
+                <div class="goal-card uncont-goal">
                     <span class="icon">✓</span>
                     <span><strong>Your Goal:</strong> Find an uncontaminated vial to use</span>
                 </div>
@@ -211,35 +168,62 @@ function getVisualInstructionPages() {
         pages.push(`
             <div class="instruction-container fade-in">
                 <h2 class="instruction-title">🎯 Your Goal</h2>
-                <p class="instruction-text">Contaminated vials are <strong>dangerous</strong>—they'll destroy your equipment!</p>
-                <p class="instruction-text">You must pick <strong>ONE vial</strong> carefully.</p>
+                <p class="instruction-text">Your goal is to find a <strong>contaminated</strong> vial, 
+                    so that you can determine what the contaminant was. 
+                    You must pick <strong>ONE vial</strong> to examine.</p>
                 <div class="outcome-demo">
-                    <div class="outcome-box success">
-                        <div class="outcome-icon">✓</div>
+                    <div class="outcome-box safe">
+                        <div class="outcome-icon">😢</div>
                         ${renderVial('', 'safe', false)}
-                        <div class="outcome-label">Safe!</div>
-                        <p style="font-size: 14px; margin: 5px 0;">Equipment intact</p>
+                        <div class="outcome-label">Failure!</div>
+                        <p style="font-size: 14px; margin: 5px 0;">Still in the dark!</p>
                     </div>
-                    <div class="outcome-box failure">
-                        <div class="outcome-icon">💥</div>
+                    <div class="outcome-box danger">
+                        <div class="outcome-icon">✓</div>
                         ${renderVial('', 'danger', false)}
-                        <div class="outcome-label">Disaster!</div>
-                        <p style="font-size: 14px; margin: 5px 0;">Equipment destroyed!</p>
+                        <div class="outcome-label">Success!</div>
+                        <p style="font-size: 14px; margin: 5px 0;">Contaminant identified!</p>
                     </div>
                 </div>
-                <div class="goal-card avoid-goal">
+                <div class="goal-card cont-goal">
                     <span class="icon">⚠</span>
-                    <span><strong>Your Goal:</strong> Avoid picking a contaminated vial</span>
+                    <span><strong>Your Goal:</strong> Find a contaminated vial to examine</span>
                 </div>
             </div>
         `);
     }
 
+    // Page 4: Your Assistant
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
+            <div class="assistant-avatar">👨‍🔬</div>
+            <p class="instruction-text">Your lab assistant was in the lab. </p>
+            <p class="instruction-text">They saw the contamination happen, although they're not completely sure 
+                exactly which vials are contaminated and which are not.</p>
+            <div class="partial-knowledge-demo">
+                <div class="knowledge-column">
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Assistant does not know about all the vials</p>
+                </div>
+            </div>
+            <p class="instruction-text">They can only tell you about the vials they know about.</p>
+        </div>
+    `);
+
     // Page 5: Your Question Choice
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">❓ Your Question</h2>
-            <p class="instruction-text">Before deciding, you can ask your assistant a question about the vials.</p>
+            <p class="instruction-text">You can ask your lab assistant ONE question.</p>
             <p class="instruction-text">You'll complete a sentence that starts with:</p>
             <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin: 25px 0; font-size: 22px;">
                 <span>"Which vials are</span>
@@ -249,7 +233,7 @@ function getVisualInstructionPages() {
             <p class="instruction-text">Type your completion in the text box provided.</p>
             <p class="instruction-text">Think about which question would give you the most useful information for <strong>your goal</strong>.</p>
             <div class="instruction-emphasis">
-                You'll complete <strong>3 trials</strong> with different contamination rates.
+                You'll complete <strong>3 trials</strong> with different expected contamination rates.
             </div>
         </div>
     `);
@@ -285,6 +269,8 @@ function createTrialStimulus(baseRate, trialNum = null, totalTrials = null) {
 
     return `
         <div class="trial-container">
+            <p class="instruction-text">Suppose that you know 
+                that the [contaminated] : [uncontaminated] ratio is ${baseRate * 10} : ${10 - (baseRate * 10)}.</p>
             ${trialHeader}
             ${renderVialRack(nVials)}
             ${renderProportionBar(baseRate, nVials)}
