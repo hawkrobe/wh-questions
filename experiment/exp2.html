@@ -150,7 +150,9 @@ function getVisualInstructionPages() {
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">⚠️ The Problem</h2>
-            <p class="instruction-text">While you were taking a break outside, some of the vials got contaminated.</p>
+            <p class="instruction-text">While you were taking a break outside, 
+                ${baseRate * nVials} vials got contaminated,
+                while ${nVials - (baseRate * nVials)} were left intact.</p>
             ${renderVialRack(nVials, states = ['safe', 'danger', 'danger', 'danger', 'safe', 'safe', 'safe', 'danger', 'safe', 'danger'])}
             <p class="instruction-text">But you can't tell which is which just by looking!</p>
         </div>
