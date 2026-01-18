@@ -34,12 +34,25 @@ function renderVialRack(nVials, states = null) {
 // PROPORTION BAR
 // -----------------------------------------------------------------------------
 
-function renderProportionBar(baseRate, nVials) {
+function renderProportionBar(baseRate, nVials, minimal = false) {
     const nContaminated = Math.round(baseRate * nVials);
     const nSafe = nVials - nContaminated;
     const contaminatedPct = baseRate * 100;
     const safePct = 100 - contaminatedPct;
 
+    // Minimal version: just the colored bar, no text (to avoid lexical priming)
+    if (minimal) {
+        return `
+            <div class="proportion-container">
+                <div class="proportion-bar">
+                    <div class="proportion-segment contaminated" style="width: ${contaminatedPct}%;"></div>
+                    <div class="proportion-segment safe" style="width: ${safePct}%;"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Full version: with labels and legend (for cover story/instructions)
     return `
         <div class="proportion-container">
             <div class="proportion-label">Expected contamination rate:</div>
