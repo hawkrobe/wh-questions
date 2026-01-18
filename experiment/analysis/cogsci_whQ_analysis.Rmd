@@ -1,0 +1,56 @@
+---
+title: "cogsci_whQ"
+author: "LEE, Seo-young"
+date: "2026-01-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+```
+
+
+```{r data processing}
+#######Splitting into exp1 and exp2########
+dat_exp1 <-
+  list.files(path = "./sample_data/", #later change to 'experiment_data'
+             pattern = "\\.csv$",
+             full.names = T) %>%
+  map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
+  filter(exp_version == "exp1") %>%
+  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure,
+         response_lowercase, chose_which_contaminated, chose_which_uncontaminated)
+  
+
+
+dat_exp2 <-
+  list.files(path = "./sample_data/", #later change to 'experiment_data'
+             pattern = "\\.csv$",
+             full.names = T) %>%
+  map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
+  filter(exp_version == "exp2") %>%
+  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure, chose_which_contaminated, chose_which_uncontaminated, chosen_question)
+
+
+
+
+#########response coding in exp1##############
+dat_exp1_toCode <- 
+  dat_exp1 %>%
+  filter(chose_which_contaminated == chose_which_uncontaminated)
+  
+dat_exp1_coded <-
+  dat_exp1 %>%
+  filter(chose_which_contaminated != chose_which_uncontaminated)
+
+nrow(dat_exp1_coded) == nrow(dat_exp1) #WANT: TRUE
+```
+
+
+
+
+
+
+
