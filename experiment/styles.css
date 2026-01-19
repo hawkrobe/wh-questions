@@ -466,12 +466,12 @@
     min-width: 200px;
 }
 
-.outcome-box.safe {
+.outcome-box.success {
     background: var(--safe-light);
     border: 2px solid var(--safe-color);
 }
 
-.outcome-box.danger {
+.outcome-box.failure {
     background: var(--danger-light);
     border: 2px solid var(--danger-color);
 }

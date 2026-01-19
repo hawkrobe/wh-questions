@@ -171,13 +171,13 @@ function getVisualInstructionPages() {
                     <p class="instruction-text">Your goal is to run your experiment on an <strong>uncontaminated</strong> vial. 
                     You must pick <strong>ONE</strong> vial to use.</p>
                     <div class="outcome-demo">
-                        <div class="outcome-box safe">
+                        <div class="outcome-box success">
                             <div class="outcome-icon">✓</div>
                             ${renderVial('', 'safe', false)}
                             <div class="outcome-label">Success!</div>
                             <p style="font-size: 14px; margin: 5px 0;">Picked a safe vial</p>
                         </div>
-                        <div class="outcome-box danger">
+                        <div class="outcome-box failure">
                             <div class="outcome-icon">😢</div>
                             ${renderVial('', 'danger', false)}
                             <div class="outcome-label">Failure!</div>
@@ -185,7 +185,7 @@ function getVisualInstructionPages() {
                         </div>
                     </div>
                     <div class="goal-card uncont-goal">
-                        <span class="icon">⚠</span>
+                        <span class="icon">✓</span>
                         <span><strong>Your Goal:</strong> Do experiment with an uncontaminated vial</span>
                     </div>
                 </div>
@@ -197,13 +197,13 @@ function getVisualInstructionPages() {
                     <p class="instruction-text">Your goal is to find out the contaminant by examining a <strong>contaminated</strong> vial. 
                     You must pick <strong>ONE vial</strong> to examine.</p>
                     <div class="outcome-demo">
-                        <div class="outcome-box safe">
+                        <div class="outcome-box failure">
                             <div class="outcome-icon">😢</div>
                             ${renderVial('', 'safe', false)}
                             <div class="outcome-label">Failure!</div>
                             <p style="font-size: 14px; margin: 5px 0;">Still in the dark!</p>
                         </div>
-                        <div class="outcome-box danger">
+                        <div class="outcome-box success">
                             <div class="outcome-icon">✓</div>
                             ${renderVial('', 'danger', false)}
                             <div class="outcome-label">Success!</div>
