@@ -32,6 +32,24 @@ const sessionID = urlParams.get('SESSION_ID') || 'unknown';
 // 2 x 3 = 6 conditions
 const expVersion = 'exp1';
 
+// Initialize jsPsych first (needed for randomization utilities)
+const jsPsych = initJsPsych({
+    on_finish: function() {
+        const finalData = {
+            prolific_pid: prolificPID,
+            study_id: studyID,
+            session_id: sessionID,
+            exp_version: expVersion,
+            goal_condition: goalCondition,
+            base_rate_condition: baseRateCondition,
+            decision_structure: decisionStructure,
+            trials: jsPsych.data.get().values(),
+            completion_time: new Date().toISOString()
+        };
+        showCompletionScreen(jsPsych, finalData, 'WHQPOL2024', prolificPID);
+    }
+});
+
 // Condition assignment (random - not via URL to avoid revealing condition)
 const goalCondition = jsPsych.randomization.sampleWithoutReplacement(['uncont', 'cont'], 1)[0];
 const baseRateCondition = jsPsych.randomization.sampleWithoutReplacement([0.2, 0.5, 0.8], 1)[0];
@@ -70,27 +88,6 @@ function getGoalConfig() {
     };
     return configs[goalCondition];
 }
-
-// =============================================================================
-// JSPSYCH INITIALIZATION
-// =============================================================================
-
-const jsPsych = initJsPsych({
-    on_finish: function() {
-        const finalData = {
-            prolific_pid: prolificPID,
-            study_id: studyID,
-            session_id: sessionID,
-            exp_version: expVersion,
-            goal_condition: goalCondition,
-            base_rate_condition: baseRateCondition,
-            decision_structure: decisionStructure,
-            trials: jsPsych.data.get().values(),
-            completion_time: new Date().toISOString()
-        };
-        showCompletionScreen(jsPsych, finalData, 'WHQPOL2024', prolificPID);
-    }
-});
 
 // =============================================================================
 // TIMELINE CONSTRUCTION
