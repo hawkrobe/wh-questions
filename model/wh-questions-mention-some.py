@@ -121,7 +121,7 @@ def set_id_utility(g, w, a):
     total_uncont_guess = popcount(a)
     recall_uncont = np.where(total_uncont_real > 0, tp_uncont / total_uncont_real, 1.0)
     precision_uncont = np.where(total_uncont_guess > 0, tp_uncont/total_uncont_guess, 1.0)
-    f1_uncont = 0.5*recall_uncont + 0.5*precision_uncont
+    f1_uncont = 2 * (precision_uncont * recall_uncont) / (precision_uncont + recall_uncont)
 
     # AVOID: f1 score on contaminated vials
     tp_cont = popcount((ALL_VIALS ^ w) & (ALL_VIALS ^ a))
@@ -129,7 +129,7 @@ def set_id_utility(g, w, a):
     total_cont_guess = popcount(ALL_VIALS ^ a)
     recall_cont = np.where(total_cont_real > 0, tp_cont / total_cont_real, 1.0)
     precision_cont = np.where(total_cont_guess > 0, tp_cont / total_cont_guess, 1.0)
-    f1_cont = 0.5*recall_cont + 0.5*precision_cont
+    f1_cont = 2 * (precision_cont * recall_cont) / (precision_cont + recall_cont)
 
     return np.where(g == Goal.FIND_UNCONTAMINATED, f1_uncont, f1_cont)
 
