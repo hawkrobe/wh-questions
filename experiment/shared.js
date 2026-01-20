@@ -390,10 +390,6 @@ function showCompletionScreen(jsPsych, finalData, completionCode, prolificPID) {
             <h1 style="background: #f0f0f0; padding: 20px; border-radius: 10px;">${completionCode}</h1>
             <p>Please copy this code and paste it into Prolific to receive your payment.</p>
             <p style="margin-top: 30px; color: #666;">You may now close this window.</p>
-            <p style="margin-top: 20px;">
-                <a href="${dataUrl}" download="wh_questions_data_${prolificPID}_${Date.now()}.json"
-                   style="color: #666; font-size: 12px;">[Download data (for testing)]</a>
-            </p>
         </div>
     `;
 
