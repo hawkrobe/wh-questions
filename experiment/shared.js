@@ -343,7 +343,7 @@ function createComprehensionCheck2(jsPsych) {
         type: jsPsychHtmlButtonResponse,
         stimulus: function() {
             if (passed) {
-                return `<p class="check-correct">✓ Correct! You're ready to begin.</p>`;
+                return `<p class="check-correct">✓ Correct! Let's continue to the next check.</p>`;
             } else {
                 const attemptsLeft = maxAttempts - attempts;
                 if (attemptsLeft > 0) {
@@ -357,7 +357,7 @@ function createComprehensionCheck2(jsPsych) {
             }
         },
         choices: function() {
-            if (passed) return ['Begin Trial'];
+            if (passed) return ['Continue'];
             if (attempts >= maxAttempts) return ['Exit Study'];
             return ['Try Again'];
         },

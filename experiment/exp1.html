@@ -271,17 +271,31 @@ function createBaseRateCheck() {
     let attempts = 0;
     let passed = false;
 
-    // Generate distractor that's always different from correct answer
-    const distractor = nContaminated === 5
-        ? `2 contaminated, 8 uncontaminated`
-        : `5 contaminated, 5 uncontaminated`;
+    // Generate options - when 0.5 base rate, swapped option is identical, so use different distractors
+    const correctAnswer_text = `${nContaminated} contaminated, ${nUncontaminated} uncontaminated`;
+    const swapped = `${nUncontaminated} contaminated, ${nContaminated} uncontaminated`;
 
-    const optionsBase = [
-        `${nContaminated} contaminated, ${nUncontaminated} uncontaminated`,
-        `${nUncontaminated} contaminated, ${nContaminated} uncontaminated`,
-        distractor,
-        `I don't know`
-    ];
+    let optionsBase;
+    if (nContaminated === nUncontaminated) {
+        // 0.5 base rate: can't use swapped (identical), use two different distractors
+        optionsBase = [
+            correctAnswer_text,
+            `2 contaminated, 8 uncontaminated`,
+            `8 contaminated, 2 uncontaminated`,
+            `I don't know`
+        ];
+    } else {
+        // Other base rates: use swapped + one distractor
+        const distractor = nContaminated === 2
+            ? `5 contaminated, 5 uncontaminated`
+            : `2 contaminated, 8 uncontaminated`;
+        optionsBase = [
+            correctAnswer_text,
+            swapped,
+            distractor,
+            `I don't know`
+        ];
+    }
     const correctAnswer = optionsBase[0];
     let shuffledOptions = [];
 
