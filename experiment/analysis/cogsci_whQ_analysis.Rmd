@@ -20,8 +20,7 @@ dat_exp1 <-
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
   filter(exp_version == "exp1") %>%
-  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure,
-         response_lowercase, chose_which_contaminated, chose_which_uncontaminated)
+  select(trial_type, base_rate, raw_response, trial_id, goal_condition, decision_structure)
   
 
 
@@ -37,17 +36,53 @@ dat_exp2 <-
 
 
 #########response coding in exp1##############
-dat_exp1_toCode <- 
-  dat_exp1 %>%
-  filter(chose_which_contaminated == chose_which_uncontaminated)
+dat_exp1<-
+  dat_exp1 %>% 
+  mutate(response_lowercase = tolower(raw_response)) %>%
+  mutate(chose_which_contaminated = 
+           (grepl("contaminated", response_lowercase, fixed = TRUE) 
+            & !grepl("not contaminated", response_lowercase, fixed = TRUE) 
+            & !grepl("uncontaminated", response_lowercase, fixed = TRUE)) 
+         | (grepl("poison", response_lowercase, fixed = TRUE) 
+            & !grepl("not poison", response_lowercase, fixed = TRUE))
+         | (grepl("dirty", response_lowercase, fixed = TRUE) 
+            & !grepl("not dirty", response_lowercase, fixed = TRUE))
+         | (grepl("dangerous", response_lowercase, fixed = TRUE) 
+            & !grepl("not dangerous", response_lowercase, fixed = TRUE))
+         | grepl("unsafe", response_lowercase, fixed = TRUE)
+         | grepl("unclean", response_lowercase, fixed = TRUE)
+         | grepl("not safe", response_lowercase, fixed = TRUE)
+         | grepl("not clean", response_lowercase, fixed = TRUE),
+         chose_which_uncontaminated = 
+           grepl("uncontaminated", response_lowercase, fixed = TRUE)
+         | grepl("not contaminated", response_lowercase, fixed = TRUE)
+         | grepl("not poison", response_lowercase, fixed = TRUE)
+         | grepl("not dirty", response_lowercase, fixed = TRUE)
+         | grepl("not dangerous", response_lowercase, fixed = TRUE)
+         | (grepl("safe", response_lowercase, fixed = TRUE) 
+            & !grepl("unsafe", response_lowercase, fixed = TRUE)
+            & !grepl("not safe", response_lowercase, fixed = TRUE))
+         | (grepl("clean", response_lowercase, fixed = TRUE) 
+            & !grepl("not clean", response_lowercase, fixed = TRUE)
+            & !grepl("unclean", response_lowercase, fixed = TRUE)))
   
-dat_exp1_coded <-
-  dat_exp1 %>%
-  filter(chose_which_contaminated != chose_which_uncontaminated)
 
-nrow(dat_exp1_coded) == nrow(dat_exp1) #WANT: TRUE
+dat_exp1_toCode <- 
+  dat_exp1%>%
+  filter(chose_which_contaminated == chose_which_uncontaminated)
+
+#check if the above transformation does binary classification
+#WANT: TRUE
+nrow(dat_exp1[dat_exp1$chose_which_contaminated != dat_exp1$chose_which_uncontaminated, ]) == nrow(dat_exp1) 
 ```
 
+
+
+```{r}
+# if nrow(dat_exp1[dat_exp1$chose_which_contaminated != dat_exp1$chose_which_uncontaminated, ]) == nrow(dat_exp1) 
+
+
+```
 
 
 
