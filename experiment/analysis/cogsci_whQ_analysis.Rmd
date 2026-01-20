@@ -9,19 +9,21 @@ output: html_document
 library(tidyverse)
 library(lme4)
 library(lmerTest)
+library(easyr)
 ```
 
 
 ```{r data processing}
-#######Splitting into exp1 and exp2########
+#######Splitting into exp1 and exp2; type shifting########
 dat_exp1 <-
   list.files(path = "./sample_data/", #later change to 'experiment_data'
              pattern = "\\.csv$",
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
   filter(exp_version == "exp1") %>%
-  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure,
-         response_lowercase, chose_which_contaminated, chose_which_uncontaminated)
+  select(trial_type, base_rate, raw_response, trial_id, goal_condition, decision_structure) %>%
+  mutate(base_rate = as.factor(base_rate),
+         goal_condition = as.factor(goal_condition))
   
 
 
@@ -31,23 +33,138 @@ dat_exp2 <-
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
   filter(exp_version == "exp2") %>%
-  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure, chose_which_contaminated, chose_which_uncontaminated, chosen_question)
+  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure, chose_which_contaminated, chose_which_uncontaminated, chosen_question) %>%
+  mutate(goal_condition = as.factor(goal_condition)) %>%
+  mutate(chose_which_contaminated = tobool(chose_which_contaminated),
+         chose_which_uncontaminated = tobool(chose_which_uncontaminated))
 
 
 
 
-#########response coding in exp1##############
+
+
+#########exp1: response coding##############
+dat_exp1<-
+  dat_exp1 %>% 
+  mutate(response_lowercase = tolower(raw_response)) %>%
+  mutate(chose_which_contaminated = 
+           (grepl("contaminated", response_lowercase, fixed = TRUE) 
+            & !grepl("not contaminated", response_lowercase, fixed = TRUE) 
+            & !grepl("uncontaminated", response_lowercase, fixed = TRUE)) 
+         | (grepl("poison", response_lowercase, fixed = TRUE) 
+            & !grepl("not poison", response_lowercase, fixed = TRUE))
+         | (grepl("dirty", response_lowercase, fixed = TRUE) 
+            & !grepl("not dirty", response_lowercase, fixed = TRUE))
+         | (grepl("dangerous", response_lowercase, fixed = TRUE) 
+            & !grepl("not dangerous", response_lowercase, fixed = TRUE))
+         | grepl("unsafe", response_lowercase, fixed = TRUE)
+         | grepl("unclean", response_lowercase, fixed = TRUE)
+         | grepl("not safe", response_lowercase, fixed = TRUE)
+         | grepl("not clean", response_lowercase, fixed = TRUE),
+         chose_which_uncontaminated = 
+           grepl("uncontaminated", response_lowercase, fixed = TRUE)
+         | grepl("not contaminated", response_lowercase, fixed = TRUE)
+         | grepl("not poison", response_lowercase, fixed = TRUE)
+         | grepl("not dirty", response_lowercase, fixed = TRUE)
+         | grepl("not dangerous", response_lowercase, fixed = TRUE)
+         | (grepl("safe", response_lowercase, fixed = TRUE) 
+            & !grepl("unsafe", response_lowercase, fixed = TRUE)
+            & !grepl("not safe", response_lowercase, fixed = TRUE))
+         | (grepl("clean", response_lowercase, fixed = TRUE) 
+            & !grepl("not clean", response_lowercase, fixed = TRUE)
+            & !grepl("unclean", response_lowercase, fixed = TRUE)))
+  
+
 dat_exp1_toCode <- 
   dat_exp1 %>%
   filter(chose_which_contaminated == chose_which_uncontaminated)
-  
+
 dat_exp1_coded <-
   dat_exp1 %>%
   filter(chose_which_contaminated != chose_which_uncontaminated)
 
-nrow(dat_exp1_coded) == nrow(dat_exp1) #WANT: TRUE
+#check if the above transformation does binary classification
+#WANT: TRUE
+nrow(dat_exp1_coded) == nrow(dat_exp1) 
+
+
+
+#########exp2: splitting by decision structure##########
+dat_exp2_sing <- 
+  dat_exp2 %>%
+  filter(decision_structure == "singleton")
+
+dat_exp2_setID <-
+  dat_exp2 %>%
+  filter(decision_structure == "set_id")
 ```
 
+
+
+```{r exploratory visualization}
+#########exp1##############
+# if nrow(dat_exp1[dat_exp1$chose_which_contaminated != dat_exp1$chose_which_uncontaminated, ]) == nrow(dat_exp1) 
+
+dat_exp1_gp <-
+  dat_exp1_coded %>%
+  group_by(base_rate, goal_condition) %>%
+  summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
+            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+
+#dat_exp1_gp$pwu_margin[is.na(dat_exp1_gp$pwu_margin)] <- 1e-13
+
+  
+  
+
+exp1_plt <-
+  dat_exp1_gp %>%
+  ggplot(mapping = aes(x = base_rate, y = p_which_uncont, group = goal_condition)) +
+  geom_point(aes(color = goal_condition), size = 3)+
+  geom_line(aes(color = goal_condition), linewidth = 2)+
+  geom_errorbar(aes(ymin = p_which_uncont - pwu_margin,
+                    ymax = p_which_uncont + pwu_margin,
+                    group = goal_condition),
+                width = 0.2)+
+  scale_y_continuous(limits = c(0,1), breaks = c(0, 0.25, 0.5, 0.75, 1))+
+  scale_color_manual(values = c("#B2182B", "#2166AC"))+
+  xlab("Base rate of contamination")+
+  ylab("P(Which are uncontaminated?)")
+
+exp1_plt
+
+
+#########exp2##############
+dat_exp2_sing_gp <-
+  dat_exp2_sing%>%
+  group_by(goal_condition) %>%
+  summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
+            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+
+
+dat_exp2_setID_gp <-
+  dat_exp2_setID%>%
+  group_by(goal_condition) %>%
+  summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
+            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+
+dat_exp2_setID_gp$pwu_margin[is.na(dat_exp2_setID_gp$pwu_margin)] <- 1e-13
+
+  
+exp2_setID_plt <-
+  dat_exp2_setID_gp %>%
+  ggplot(mapping = aes(x = goal_condition, y = p_which_uncont)) +
+  geom_bar(stat = "identity", 
+           position=position_dodge())+
+  geom_errorbar(aes(ymin = p_which_uncont - pwu_margin,
+                    ymax = p_which_uncont + pwu_margin),
+                width = 0.2,
+                position = position_dodge(0.9)) +
+  xlab("Goal condition")+
+  ylab("P(Which are uncontaminated?)")
+
+
+exp2_setID_plt
+```
 
 
 
