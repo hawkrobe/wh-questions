@@ -15,30 +15,60 @@ library(easyr)
 
 ```{r data processing}
 #######Splitting into exp1 and exp2; type shifting########
+###Exp1###
 dat_exp1 <-
-  list.files(path = "./sample_data/", #later change to 'experiment_data'
+  list.files(path = "./experiment1_data/", 
              pattern = "\\.csv$",
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
-  filter(exp_version == "exp1") %>%
-  select(trial_type, base_rate, raw_response, trial_id, goal_condition, decision_structure) %>%
+  filter(trial_type == "survey-html-form" | trial_type == "survey-text") %>%
+  pivot_wider(
+    names_from = trial_type,
+    values_from = response
+  )
+
+###cleaning up pivot###
+for (i in seq(1, nrow(dat_exp1), by = 2)){
+  dat_exp1$`survey-text`[i] <- dat_exp1$`survey-text`[i+1]
+}
+
+dat_exp1 <-
+  dat_exp1 %>%
+  filter(!is.na(goal_condition)) %>%
+  select(goal_condition, base_rate, raw_response, trial_id, decision_structure, `survey-text`) %>%
   mutate(base_rate = as.factor(base_rate),
-         goal_condition = as.factor(goal_condition))
+         goal_condition = as.factor(goal_condition)) %>%
+  rename(strategy = `survey-text`)
   
 
-
+###Exp2####
 dat_exp2 <-
-  list.files(path = "./sample_data/", #later change to 'experiment_data'
+  list.files(path = "./experiment2_data/", 
              pattern = "\\.csv$",
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
-  filter(exp_version == "exp2") %>%
-  select(trial_type, response, trial_id, base_rate, goal_condition, decision_structure, chose_which_contaminated, chose_which_uncontaminated, chosen_question) %>%
-  mutate(goal_condition = as.factor(goal_condition)) %>%
+  filter(!is.na(trial_id) | trial_type == "survey-text") %>%
+  pivot_wider(
+    names_from = trial_type,
+    values_from = response
+  )
+
+###cleaning up pivot###
+for (i in seq(1, nrow(dat_exp2), by = 2)){
+  dat_exp2$`survey-text`[i] <- dat_exp2$`survey-text`[i+1]
+}
+
+dat_exp2 <-
+  dat_exp2 %>%
+  filter(!is.na(goal_condition)) %>%
+  select(goal_condition, decision_structure, 
+         chosen_question, chose_which_contaminated, chose_which_uncontaminated, 
+         base_rate, trial_id, `survey-text`) %>%
+  mutate(goal_condition = as.factor(goal_condition),
+         decision_structure = as.factor(decision_structure)) %>%
   mutate(chose_which_contaminated = tobool(chose_which_contaminated),
-         chose_which_uncontaminated = tobool(chose_which_uncontaminated))
-
-
+         chose_which_uncontaminated = tobool(chose_which_uncontaminated)) %>%
+  rename(strategy = `survey-text`)
 
 
 
@@ -134,20 +164,38 @@ exp1_plt
 
 
 #########exp2##############
+###Singleton####
 dat_exp2_sing_gp <-
   dat_exp2_sing%>%
   group_by(goal_condition) %>%
   summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
             pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
 
+exp2_sing_plt <-
+  dat_exp2_sing_gp %>%
+  ggplot(mapping = aes(x = goal_condition, y = p_which_uncont)) +
+  geom_bar(stat = "identity", 
+           position=position_dodge())+
+  geom_errorbar(aes(ymin = p_which_uncont - pwu_margin,
+                    ymax = p_which_uncont + pwu_margin),
+                width = 0.2,
+                position = position_dodge(0.9)) +
+  xlab("Goal condition")+
+  ylab("P(Which are not contaminated?)") +
+  labs(title = "Singleton")
 
+
+exp2_sing_plt
+
+
+
+#####Set ID#####
 dat_exp2_setID_gp <-
   dat_exp2_setID%>%
   group_by(goal_condition) %>%
   summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
             pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
 
-dat_exp2_setID_gp$pwu_margin[is.na(dat_exp2_setID_gp$pwu_margin)] <- 1e-13
 
   
 exp2_setID_plt <-
@@ -160,7 +208,8 @@ exp2_setID_plt <-
                 width = 0.2,
                 position = position_dodge(0.9)) +
   xlab("Goal condition")+
-  ylab("P(Which are uncontaminated?)")
+  ylab("P(Which are not contaminated?)") +
+  labs(title = "Set ID")
 
 
 exp2_setID_plt
