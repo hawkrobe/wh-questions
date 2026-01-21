@@ -58,6 +58,17 @@ const baseRateCondition = jsPsych.randomization.sampleWithoutReplacement([0.2, 0
 // Exp1 is always singleton decision structure
 const decisionStructure = 'singleton';
 
+// Add metadata to all trials so it gets saved with the CSV
+jsPsych.data.addProperties({
+    prolific_pid: prolificPID,
+    study_id: studyID,
+    session_id: sessionID,
+    exp_version: expVersion,
+    goal_condition: goalCondition,
+    base_rate_condition: baseRateCondition,
+    decision_structure: decisionStructure
+});
+
 // Test mode - skip button delays for faster testing
 const testMode = urlParams.get('testMode') === 'true';
 const buttonDisableTime = testMode ? 100 : 2000;
@@ -458,6 +469,17 @@ timeline.push(debrief);
 
 const subject_id = jsPsych.randomization.randomID(10);
 const filename = `${subject_id}.csv`;
+
+// Capture completion time just before saving
+const record_completion_time = {
+    type: jsPsychCallFunction,
+    func: function() {
+        jsPsych.data.addProperties({
+            completion_time: new Date().toISOString()
+        });
+    }
+};
+timeline.push(record_completion_time);
 
 const save_data = {
     type: jsPsychPipe,
