@@ -130,6 +130,12 @@ dat_exp2_setID <-
 ```
 
 
+```{r saving tidied csv files}
+write_csv(dat_exp1_coded, "exp1_coded.csv")
+write_csv(dat_exp1_toCode, "exp1_toCode.csv")
+write_csv(dat_exp2_sing, "exp2_singleton.csv")
+write_csv(dat_exp2_setID, "exp2_setID.csv")
+```
 
 ```{r exploratory visualization}
 #########exp1##############
