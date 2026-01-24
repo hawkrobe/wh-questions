@@ -101,6 +101,31 @@ function getGoalConfig() {
     return configs[goalCondition];
 }
 
+// Base rate condition
+function getBaseRate() {
+    const rates = {
+        0.2: {
+            text: 'only a few of the vials were contaminated, and most of the vials were not.',
+            keyword: 'only a few',
+            keywordInverse: 'mostly'
+        },
+        0.5: {
+            text: 'half of the vials were contaminated, and half of the vials were not.',
+            keyword: 'half',
+            keywordInverse: 'half'
+        },
+        0.8: {
+            text: 'most of the vials were contaminated, and only a few were not.',
+            keyword: 'mostly',
+            keywordInverse: 'only a few'
+        }
+    };
+    return rates[baseRateCondition];
+}
+
+
+
+
 // =============================================================================
 // TIMELINE CONSTRUCTION
 // =============================================================================
@@ -153,14 +178,40 @@ function getVisualInstructionPages() {
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">⚠️ The Problem</h2>
             <p class="instruction-text">While you were taking a break outside, some of the vials got contaminated.</p>
-            <p class="instruction-text">You know that <strong>${nContaminated} vials are contaminated</strong> and <strong>${nUncontaminated} are uncontaminated</strong>.</p>
+            <p class="instruction-text">You know that ${getBaseRate().text}</p>
             ${renderVialRack(nVials, contaminationStates)}
             <p class="instruction-text">But you can't tell which is which just by looking!</p>
-            ${renderProportionBar(baseRateCondition, nVials)}
         </div>
     `);
+    
+    // Page 3: Your Colleague
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">🔬 Your Colleague</h2>
+            <div class="colleague-avatar">👨‍🔬</div>
+            <p class="instruction-text">Luckily, your colleague was in the lab when the contamination happened.</p>
+            <p class="instruction-text">They don't know the status of all the vials,
+                but they know for certain about the ones they did see.</p>
+            <div class="partial-knowledge-demo">
+                <div class="knowledge-column">
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'safe', false)}
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Colleague knows some for certain, others not</p>
+                </div>
+            </div>
+        </div>
+    `);
+    
 
-    // Page 3: Your Goal (different for UNCONT vs CONT)
+    // Page 4: Your Goal (different for UNCONT vs CONT)
     if (goalCondition === 'uncont') {
         pages.push(`
             <div class="instruction-container fade-in">
@@ -215,36 +266,12 @@ function getVisualInstructionPages() {
         `);
     }
 
-    // Page 4: Your Assistant
-    pages.push(`
-        <div class="instruction-container fade-in">
-            <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
-            <div class="assistant-avatar">👨‍🔬</div>
-            <p class="instruction-text">Your lab assistant was in the lab.</p>
-            <p class="instruction-text">They saw the contamination happen,
-                even though they're not completely sure which are contaminated and which are not.</p>
-            <div class="partial-knowledge-demo">
-                <div class="knowledge-column">
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        ${renderVial('', 'danger', false)}
-                        ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'danger', false)}
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'danger', false)}
-                    </div>
-                    <p style="font-size: 14px; color: #666;">Assistant knows about some but not all the vials</p>
-                </div>
-            </div>
-        </div>
-    `);
-
+    
     // Page 5: Your Question Choice
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">❓ Your Question</h2>
-            <p class="instruction-text">You can ask your lab assistant ONE question.</p>
+            <p class="instruction-text">You can ask your colleague ONE question.</p>
             <p class="instruction-text">You'll complete a sentence that starts with:</p>
             <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin: 25px 0; font-size: 22px;">
                 <span>"Which vials are</span>
@@ -283,23 +310,23 @@ function createBaseRateCheck() {
     let passed = false;
 
     // Generate options - when 0.5 base rate, swapped option is identical, so use different distractors
-    const correctAnswer_text = `${nContaminated} contaminated, ${nUncontaminated} uncontaminated`;
-    const swapped = `${nUncontaminated} contaminated, ${nContaminated} uncontaminated`;
+    const correctAnswer_text = `${getBaseRate().keyword} contaminated, ${getBaseRate().keywordInverse} uncontaminated`;
+    const swapped = `${getBaseRate().keywordInverse} contaminated, ${getBaseRate().keyword} uncontaminated`;
 
     let optionsBase;
     if (nContaminated === nUncontaminated) {
         // 0.5 base rate: can't use swapped (identical), use two different distractors
         optionsBase = [
             correctAnswer_text,
-            `2 contaminated, 8 uncontaminated`,
-            `8 contaminated, 2 uncontaminated`,
+            `only a few contaminated, mostly uncontaminated`,
+            `mostly contaminated, only a few uncontaminated`,
             `I don't know`
         ];
     } else {
         // Other base rates: use swapped + one distractor
         const distractor = nContaminated === 2
-            ? `5 contaminated, 5 uncontaminated`
-            : `2 contaminated, 8 uncontaminated`;
+            ? `half contaminated, half uncontaminated`
+            : `only a few contaminated, mostly uncontaminated`;
         optionsBase = [
             correctAnswer_text,
             swapped,
@@ -383,7 +410,7 @@ function createTrialStimulus() {
                 <span><strong>Your Goal:</strong> ${getGoalConfig().text}</span>
             </div>
             <div class="question-prompt">
-                You ask your assistant:
+                You ask your colleague:
             </div>
         </div>
     `;

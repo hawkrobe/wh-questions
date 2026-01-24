@@ -219,7 +219,7 @@
     font-weight: 500;
 }
 
-.assistant-avatar {
+.colleague-avatar {
     width: 80px;
     height: 80px;
     background: linear-gradient(135deg, #42a5f5 0%, #1976d2 100%);
@@ -405,9 +405,9 @@
 }
 
 /* =================================================================
-   ASSISTANT RESPONSE (for feedback/demos)
+   COLLEAGUE RESPONSE (for feedback/demos)
    ================================================================= */
-.assistant-response {
+.colleague-response {
     background: #e3f2fd;
     border-radius: 15px;
     padding: 20px;
@@ -416,7 +416,7 @@
     position: relative;
 }
 
-.assistant-response::before {
+.colleague-response::before {
     content: '';
     position: absolute;
     top: -10px;

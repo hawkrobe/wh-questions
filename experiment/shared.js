@@ -223,15 +223,15 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
     const optionsBase = decisionStructure === 'singleton'
         ? [
             'Run experiment on an uncontaminated vial',
-            'Analyze a contaminated vial',
+            'Find out the contaminant that went in the vials',
             'Test as many vials as possible',
-            'Ask the assistant multiple questions'
+            'Ask your colleague multiple questions'
         ]
         : [
             'Help Dr. Smith run experiments on uncontaminated vials',
             'Remove contaminated vials to pass the safety inspection',
             'Sort vials as quickly as possible',
-            'Ask the assistant multiple questions'
+            'Ask your colleague multiple questions'
         ];
 
     const correctAnswer = goalCondition === 'uncont' ? optionsBase[0] : optionsBase[1];
@@ -262,7 +262,7 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
         type: jsPsychHtmlButtonResponse,
         stimulus: function() {
             if (passed) {
-                return `<p class="check-correct">✓ Correct! Let's continue to the next check.</p>`;
+                return `<p class="check-correct">✓ Correct! Let's continue.</p>`;
             } else {
                 const attemptsLeft = maxAttempts - attempts;
                 if (attemptsLeft > 0) {
@@ -270,7 +270,7 @@ function createComprehensionCheck1(jsPsych, goalCondition, decisionStructure) {
                     if (decisionStructure === 'singleton') {
                         reminderText = goalCondition === 'uncont'
                             ? 'run your experiment successfully'
-                            : 'analyze a contaminated vial';
+                            : 'find out the contaminant';
                     } else {
                         reminderText = goalCondition === 'uncont'
                             ? 'help Dr. Smith\'s experiment succeed'
@@ -310,12 +310,12 @@ function createComprehensionCheck2(jsPsych) {
     let passed = false;
 
     const optionsBase = [
-        'Yes, the assistant knows everything.',
-        'No, the assistant only has partial information.',
-        'The assistant knows nothing.',
+        'The colleague knows the status of all the vials.',
+        'The colleague knows for certain about some vials, not about others.',
+        'The colleague knows nothing.',
         'It depends on the trial.'
     ];
-    const correctAnswer = 'No, the assistant only has partial information.';
+    const correctAnswer = 'The colleague knows for certain about some vials, not about others.';
     let shuffledOptions = [];
 
     const check = {
@@ -323,8 +323,8 @@ function createComprehensionCheck2(jsPsych) {
         questions: function() {
             shuffledOptions = jsPsych.randomization.shuffle([...optionsBase]);
             return [{
-                prompt: '<strong>Comprehension Check 2:</strong> Does your lab assistant know the status of ALL the vials?',
-                name: 'assistant_check',
+                prompt: '<strong>Comprehension Check 2:</strong> What does your colleague know about the status of the vials?',
+                name: 'colleague_check',
                 options: shuffledOptions,
                 required: true
             }];
@@ -332,7 +332,7 @@ function createComprehensionCheck2(jsPsych) {
         data: { trial_type: 'comprehension_check_2' },
         on_finish: function(data) {
             attempts++;
-            const response = data.response.assistant_check;
+            const response = data.response.colleague_check;
             data.correct = response === correctAnswer;
             data.option_order = shuffledOptions;
             passed = data.correct;
@@ -343,12 +343,12 @@ function createComprehensionCheck2(jsPsych) {
         type: jsPsychHtmlButtonResponse,
         stimulus: function() {
             if (passed) {
-                return `<p class="check-correct">✓ Correct! Let's continue to the next check.</p>`;
+                return `<p class="check-correct">✓ Correct! Let's continue.</p>`;
             } else {
                 const attemptsLeft = maxAttempts - attempts;
                 if (attemptsLeft > 0) {
                     return `<p class="check-incorrect">That's not quite right.</p>
-                            <p>Remember: The assistant knows about <strong>some but not all</strong> of the vials, so they only have <strong>partial information</strong>.</p>
+                            <p>Remember: Your colleague knows about <strong>some but not all</strong> of the vials, so they only have <strong>partial information</strong>.</p>
                             <p>You have ${attemptsLeft} attempt(s) remaining.</p>`;
                 } else {
                     return `<p class="check-incorrect">You have exceeded the maximum attempts.</p>

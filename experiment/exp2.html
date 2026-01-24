@@ -173,8 +173,34 @@ function getVisualInstructionPages() {
         </div>
     `);
 
+    // Page 3: Your Colleague
+    pages.push(`
+        <div class="instruction-container fade-in">
+            <h2 class="instruction-title">🔬 Your Colleague</h2>
+            <div class="colleague-avatar">👨‍🔬</div>
+            <p class="instruction-text">Luckily, your colleague was in the lab when the contamination happened.</p>
+            <p class="instruction-text">They don't know the status of all the vials,
+                but they know for certain about the ones they did see.</p>
+            <div class="partial-knowledge-demo">
+                <div class="knowledge-column">
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'safe', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'unknown', false)}
+                        ${renderVial('', 'danger', false)}
+                        ${renderVial('', 'safe', false)}
+                    </div>
+                    <p style="font-size: 14px; color: #666;">Colleague knows some for certain, others not</p>
+                </div>
+            </div>
+        </div>
+    `);
 
-    // Page 3: Your Goal (different for UNCONT vs CONT, singleton vs set_id)
+
+    // Page 4: Your Goal (different for UNCONT vs CONT, singleton vs set_id)
     if (decisionStructure === 'singleton') {
         if (goalCondition === 'uncont') {
             pages.push(`
@@ -198,7 +224,7 @@ function getVisualInstructionPages() {
                     </div>
                     <div class="goal-card uncont-goal">
                         <span class="icon">✓</span>
-                        <span><strong>Your Goal:</strong> Do experiment with an uncontaminated vial</span>
+                        <span><strong>Your Goal:</strong> Run experiment on an uncontaminated vial</span>
                     </div>
                 </div>
             `);
@@ -278,37 +304,12 @@ function getVisualInstructionPages() {
         }
     }
 
-    // Page 4: Your Assistant
-    pages.push(`
-        <div class="instruction-container fade-in">
-            <h2 class="instruction-title">🔬 Your Lab Assistant</h2>
-            <div class="assistant-avatar">👨‍🔬</div>
-            <p class="instruction-text">Your lab assistant was in the lab. </p>
-            <p class="instruction-text">They saw the contamination happen, 
-                even though they're not completely sure which are contaminated and which are not.</p>
-            <div class="partial-knowledge-demo">
-                <div class="knowledge-column">
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        ${renderVial('', 'danger', false)}
-                        ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'safe', false)}
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'danger', false)}
-                        ${renderVial('', 'unknown', false)}
-                        ${renderVial('', 'danger', false)}
-                    </div>
-                    <p style="font-size: 14px; color: #666;">Assistant knows about some but not all the vials</p>
-                </div>
-            </div>
-        </div>
-    `);
-
 
     // Page 5: Your Question Choice
     pages.push(`
         <div class="instruction-container fade-in">
             <h2 class="instruction-title">❓ Your Question</h2>
-            <p class="instruction-text">Before deciding, you can ask your assistant <strong>ONE</strong> of two questions:</p>
+            <p class="instruction-text">Before deciding, you can ask your colleague <strong>ONE</strong> of two questions:</p>
             <div style="display: flex; justify-content: center; gap: 20px; margin: 25px 0; flex-wrap: wrap;">
                 <div class="question-btn" style="cursor: default;">
                     "Which vials are <strong style="color: var(--danger-color);">contaminated</strong>?"
@@ -358,7 +359,7 @@ function createTrialStimulus() {
                 <span><strong>Your Goal:</strong> ${getGoalConfig().text}</span>
             </div>
             <div class="question-prompt">
-                You ask your assistant:
+                You ask your colleague:
             </div>
         </div>
     `;
