@@ -34,7 +34,7 @@ for (i in seq(1, nrow(dat_exp1), by = 2)){
 
 dat_exp1 <-
   dat_exp1 %>%
-  filter(!is.na(goal_condition)) %>%
+  filter(!is.na(base_rate)) %>%
   select(goal_condition, base_rate, raw_response, trial_id, decision_structure, `survey-text`) %>%
   mutate(base_rate = as.factor(base_rate),
          goal_condition = as.factor(goal_condition)) %>%
@@ -60,7 +60,7 @@ for (i in seq(1, nrow(dat_exp2), by = 2)){
 
 dat_exp2 <-
   dat_exp2 %>%
-  filter(!is.na(goal_condition)) %>%
+  filter(!is.na(chosen_question)) %>%
   select(goal_condition, decision_structure, 
          chosen_question, chose_which_contaminated, chose_which_uncontaminated, 
          base_rate, trial_id, `survey-text`) %>%
@@ -80,7 +80,8 @@ dat_exp1<-
   mutate(chose_which_contaminated = 
            (grepl("contaminated", response_lowercase, fixed = TRUE) 
             & !grepl("not contaminated", response_lowercase, fixed = TRUE) 
-            & !grepl("uncontaminated", response_lowercase, fixed = TRUE)) 
+            & !grepl("uncontaminated", response_lowercase, fixed = TRUE)
+            & !grepl("were they contaminated", response_lowercase, fixed = TRUE)) 
          | (grepl("poison", response_lowercase, fixed = TRUE) 
             & !grepl("not poison", response_lowercase, fixed = TRUE))
          | (grepl("dirty", response_lowercase, fixed = TRUE) 
@@ -145,7 +146,7 @@ dat_exp1_gp <-
   dat_exp1_coded %>%
   group_by(base_rate, goal_condition) %>%
   summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
-            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+            pwu_margin = qt(0.975, df = nrow(dat_exp1_coded) - 1) * sd(chose_which_uncontaminated) / sqrt(nrow(dat_exp1_coded))) 
 
 #dat_exp1_gp$pwu_margin[is.na(dat_exp1_gp$pwu_margin)] <- 1e-13
 
@@ -175,7 +176,7 @@ dat_exp2_sing_gp <-
   dat_exp2_sing%>%
   group_by(goal_condition) %>%
   summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
-            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+            pwu_margin = qt(0.975, df = nrow(dat_exp2_sing) - 1) * sd(chose_which_uncontaminated) / sqrt(nrow(dat_exp2_sing))) 
 
 exp2_sing_plt <-
   dat_exp2_sing_gp %>%
@@ -197,10 +198,10 @@ exp2_sing_plt
 
 #####Set ID#####
 dat_exp2_setID_gp <-
-  dat_exp2_setID%>%
+  dat_exp2_setID %>%
   group_by(goal_condition) %>%
   summarize(p_which_uncont = mean(chose_which_uncontaminated, na.rm = TRUE),
-            pwu_margin = qt(0.975, df = 99) * sd(chose_which_uncontaminated) / sqrt(100)) 
+            pwu_margin = qt(0.975, df = nrow(dat_exp2_setID) - 1) * sd(chose_which_uncontaminated) / sqrt(nrow(dat_exp2_setID))) 
 
 
   
