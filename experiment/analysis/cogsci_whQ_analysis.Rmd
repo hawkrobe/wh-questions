@@ -35,9 +35,10 @@ for (i in seq(1, nrow(dat_exp1), by = 2)){
 dat_exp1 <-
   dat_exp1 %>%
   filter(!is.na(base_rate)) %>%
-  select(goal_condition, base_rate, raw_response, trial_id, decision_structure, `survey-text`) %>%
+  select(prolific_pid, goal_condition, base_rate, raw_response, trial_id, decision_structure, `survey-text`) %>%
   mutate(base_rate = as.factor(base_rate),
-         goal_condition = as.factor(goal_condition)) %>%
+         goal_condition = as.factor(goal_condition),
+         prolific_pid = as.factor(prolific_pid)) %>%
   rename(strategy = `survey-text`)
   
 
@@ -61,11 +62,12 @@ for (i in seq(1, nrow(dat_exp2), by = 2)){
 dat_exp2 <-
   dat_exp2 %>%
   filter(!is.na(chosen_question)) %>%
-  select(goal_condition, decision_structure, 
+  select(prolific_pid, goal_condition, decision_structure, 
          chosen_question, chose_which_contaminated, chose_which_uncontaminated, 
          base_rate, trial_id, `survey-text`) %>%
   mutate(goal_condition = as.factor(goal_condition),
-         decision_structure = as.factor(decision_structure)) %>%
+         decision_structure = as.factor(decision_structure),
+         prolific_pid = as.factor(prolific_pid)) %>%
   mutate(chose_which_contaminated = tobool(chose_which_contaminated),
          chose_which_uncontaminated = tobool(chose_which_uncontaminated)) %>%
   rename(strategy = `survey-text`)
@@ -81,7 +83,10 @@ dat_exp1<-
            (grepl("contaminated", response_lowercase, fixed = TRUE) 
             & !grepl("not contaminated", response_lowercase, fixed = TRUE) 
             & !grepl("uncontaminated", response_lowercase, fixed = TRUE)
-            & !grepl("were they contaminated", response_lowercase, fixed = TRUE)) 
+            & !grepl("were they contaminated", response_lowercase, fixed = TRUE))
+         | (grepl("contaminant", response_lowercase, fixed = TRUE)
+            & !grepl("not contaminant", response_lowercase, fixed = TRUE)
+            & !grepl("uncontaminant", response_lowercase, fixed = TRUE))
          | (grepl("poison", response_lowercase, fixed = TRUE) 
             & !grepl("not poison", response_lowercase, fixed = TRUE))
          | (grepl("dirty", response_lowercase, fixed = TRUE) 
@@ -91,10 +96,14 @@ dat_exp1<-
          | grepl("unsafe", response_lowercase, fixed = TRUE)
          | grepl("unclean", response_lowercase, fixed = TRUE)
          | grepl("not safe", response_lowercase, fixed = TRUE)
-         | grepl("not clean", response_lowercase, fixed = TRUE),
+         | grepl("not clean", response_lowercase, fixed = TRUE)
+         | grepl("not pure", response_lowercase, fixed = TRUE)
+         | grepl("impure", response_lowercase, fixed = TRUE),
          chose_which_uncontaminated = 
            grepl("uncontaminated", response_lowercase, fixed = TRUE)
          | grepl("not contaminated", response_lowercase, fixed = TRUE)
+         | grepl("uncontaminant", response_lowercase, fixed = TRUE)
+         | grepl("not contaminant", response_lowercase, fixed = TRUE)
          | grepl("not poison", response_lowercase, fixed = TRUE)
          | grepl("not dirty", response_lowercase, fixed = TRUE)
          | grepl("not dangerous", response_lowercase, fixed = TRUE)
@@ -103,7 +112,10 @@ dat_exp1<-
             & !grepl("not safe", response_lowercase, fixed = TRUE))
          | (grepl("clean", response_lowercase, fixed = TRUE) 
             & !grepl("not clean", response_lowercase, fixed = TRUE)
-            & !grepl("unclean", response_lowercase, fixed = TRUE)))
+            & !grepl("unclean", response_lowercase, fixed = TRUE))
+         | (grepl("pure", response_lowercase, fixed = TRUE)
+            & !grepl("not pure", response_lowercase, fixed = TRUE)
+            & !grepl("impure", response_lowercase, fixed = TRUE)))
   
 
 dat_exp1_toCode <- 
@@ -223,7 +235,21 @@ exp2_setID_plt
 ```
 
 
+```{r regression}
+mod_exp1 <- 
+  glm(chose_which_uncontaminated ~ goal_condition*base_rate, data = dat_exp1_coded, family = "binomial")
 
+
+summary(mod_exp1)
+```
+
+```{r}
+mod_exp2 <- 
+  glm(chose_which_uncontaminated ~ goal_condition*decision_structure, data = dat_exp2, family = "binomial")
+
+
+summary(mod_exp2)
+```
 
 
 
