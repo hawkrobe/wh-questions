@@ -1,0 +1,168 @@
+"trial_type","rt","stimulus","response","trial_index","plugin_version","time_elapsed","prolific_pid","study_id","session_id","exp_version","goal_condition","base_rate_condition","decision_structure","completion_time","view_history","question_order","correct","option_order","trial_id","base_rate","button_order","chosen_question","chose_which_contaminated","chose_which_uncontaminated","value"
+"html-button-response","3601","
+    <h2 style=""text-align: center;"">STANFORD UNIVERSITY</h2>
+    <h3 style=""text-align: center;"">Research Information Sheet</h3>
+    <div class=""instructions-box"" style=""font-size: 15px; line-height: 1.5;"">
+        <p><strong>Protocol Director:</strong> Robert Hawkins<br>
+        <strong>Protocol Title:</strong> Communication and social cognition in natural audiovisual contexts<br>
+        <strong>IRB#</strong> 77226</p>
+
+        <p><strong>DESCRIPTION:</strong> You are invited to participate in a research study about language and communication. The purpose of the research is to understand how people formulate questions to gather information in uncertain situations. This research will be conducted through the Prolific platform, including participants from the US, UK, and Canada.</p>
+
+        <p><strong>TIME INVOLVEMENT:</strong> The task will last the amount of time advertised on Prolific. You are free to withdraw from the study at any time.</p>
+
+        <p><strong>RISKS AND BENEFITS:</strong> Study data will be stored securely, in compliance with Stanford University standards, minimizing the risk of confidentiality breach. This study advances our scientific understanding of how people communicate and make decisions. We cannot and do not guarantee or promise that you will receive any benefits from this study.</p>
+
+        <p><strong>PAYMENTS:</strong> You will receive payment in the amount advertised on Prolific. If you do not complete this study, you will receive prorated payment based on the time that you have spent.</p>
+
+        <p><strong>PARTICIPANT'S RIGHTS:</strong> If you have read this form and have decided to participate in this project, please understand your participation is voluntary and you have the right to withdraw your consent or discontinue participation at any time without penalty or loss of benefits to which you are otherwise entitled. The alternative is not to participate. You have the right to refuse to answer particular questions. The results of this research study may be presented at scientific or professional meetings or published in scientific journals. Your individual privacy will be maintained in all published and written data resulting from the study. In accordance with scientific norms, the data from this study may be used or shared with other researchers for future research (after removing personally identifying information) without additional consent from you.</p>
+
+        <p><strong>CONTACT INFORMATION:</strong><br>
+        <em>Questions:</em> If you have any questions, concerns or complaints about this research, its procedures, risks and benefits, contact the Protocol Director, Robert Hawkins (rdhawkins@stanford.edu).<br><br>
+        <em>Independent Contact:</em> If you are not satisfied with how this study is being conducted, or if you have any concerns, complaints, or general questions about the research or your rights as a participant, please contact the Stanford Institutional Review Board (IRB) to speak to someone independent of the research team at 650-723-2480 or toll free at 1-866-680-2906, or email at irb2-manager@stanford.edu. You can also write to the Stanford IRB, Stanford University, 1705 El Camino Real, Palo Alto, CA 94306.</p>
+
+        <p style=""text-align: center; margin-top: 20px;""><strong>Please save or print a copy of this page for your records.<br>If you agree to participate in this research, please click ""Continue"".</strong></p>
+    </div>
+","0","0","2.0.0","3605","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
+"instructions","65671","","","1","2.0.0","69287","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","[{""page_index"":0,""viewing_time"":8028},{""page_index"":1,""viewing_time"":11566},{""page_index"":2,""viewing_time"":16157},{""page_index"":3,""viewing_time"":12669},{""page_index"":4,""viewing_time"":17250}]","","","","","","","","","",""
+"survey-multi-choice","14564","","{""goal_check"":""Help Dr. Smith run experiments on uncontaminated vials""}","2","2.0.0","83858","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","[0]","true","[""Remove contaminated vials to pass the safety inspection"",""Sort vials as quickly as possible"",""Help Dr. Smith run experiments on uncontaminated vials"",""Ask your colleague multiple questions""]","","","","","","",""
+"html-button-response","1566","<p class=""check-correct"">✓ Correct! Let's continue.</p>","0","3","2.0.0","85426","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
+"survey-multi-choice","7726","","{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}","4","2.0.0","93155","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","[0]","true","[""The colleague knows the status of all the vials."",""It depends on the trial."",""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing.""]","","","","","","",""
+"html-button-response","1422","<p class=""check-correct"">✓ Correct! Let's continue.</p>","0","5","2.0.0","94580","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
+"html-button-response","8568","
+        <div class=""trial-container"">
+            <div class=""vial-rack"">
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">1</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">2</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">3</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">4</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">5</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">6</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">7</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">8</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">9</div>
+        </div>
+    
+        <div class=""vial-container"">
+            <div class=""vial unknown "">
+                <div class=""vial-body"">
+                    <div class=""vial-liquid""></div>
+                </div>
+                <div class=""vial-status""></div>
+            </div>
+            <div class=""vial-label"">10</div>
+        </div>
+    </div>
+            <div class=""goal-card uncont-goal"">
+                <span class=""icon"">🔬</span>
+                <span><strong>Your Goal:</strong> Sort all vials. Dr. Smith will use vials from <strong>""Safe to Use""</strong> for an experiment tomorrow</span>
+            </div>
+            <div class=""question-prompt"">
+                You ask your colleague:
+            </div>
+        </div>
+    ","0","6","2.0.0","103151","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","exp2_trial1","0.5","[""Which vials are contaminated?"",""Which vials are not contaminated?""]","Which vials are contaminated?","true","false",""
+"survey-text","45163","","{""strategy"":""I wanted to make sure the vials I knew were contaminated were removed""}","7","2.0.0","148320","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
+"html-button-response","4119","
+    <h2>Study Complete - Debriefing</h2>
+    <div class=""instructions-box"">
+        <p><strong>Thank you for participating!</strong></p>
+
+        <p><strong>Purpose of this study:</strong></p>
+        <p>This study investigates how people choose to phrase questions when seeking information.
+        Specifically, we are interested in whether people's goals influence which question they ask—for example,
+        whether asking ""Which are contaminated?"" vs. ""Which are uncontaminated?"" depends on what the person
+        wants to accomplish.</p>
+
+        <p><strong>What we're studying:</strong></p>
+        <p>We hypothesize that people strategically choose question framing to maximize the usefulness of
+        the answer for their specific decision problem. Your responses will help us understand the
+        cognitive processes underlying question formulation.</p>
+
+        <p><strong>Confidentiality:</strong></p>
+        <p>Your responses are completely anonymous and will only be used for research purposes.
+        No identifying information has been collected.</p>
+
+        <p>If you have any questions about this research, please contact sylee423@stanford.edu or rdhawkins@stanford.edu.</p>
+    </div>
+","0","8","2.0.0","152442","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
+"call-function","","","","9","2.0.0","152444","67694ed279dcc7886422c247","696ee9efae8f9140d1acbe25","6976b390a4048982432719f2","exp2","uncont","0.5","set_id","2026-01-26T00:24:16.102Z","","","","","","","","","","",""
