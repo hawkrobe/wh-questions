@@ -22,6 +22,7 @@ dat_exp1 <-
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
   filter(trial_type == "survey-html-form" | trial_type == "survey-text") %>%
+  filter(!prolific_pid %in% c("66463ba8fac8591a6734db5b")) %>% #returned
   pivot_wider(
     names_from = trial_type,
     values_from = response
@@ -36,9 +37,10 @@ dat_exp1 <-
   dat_exp1 %>%
   filter(!is.na(base_rate)) %>%
   select(prolific_pid, goal_condition, base_rate, raw_response, trial_id, decision_structure, `survey-text`) %>%
-  mutate(base_rate = as.factor(base_rate),
-         goal_condition = as.factor(goal_condition),
-         prolific_pid = as.factor(prolific_pid)) %>%
+  mutate(base_rate = factor(base_rate),
+         goal_condition = factor(goal_condition, 
+                                 levels = c("uncont", "cont")),
+         prolific_pid = factor(prolific_pid)) %>%
   rename(strategy = `survey-text`)
   
 
@@ -49,6 +51,7 @@ dat_exp2 <-
              full.names = T) %>%
   map_df(~read_csv(., col_types = cols(.default = "c"))) %>%
   filter(!is.na(trial_id) | trial_type == "survey-text") %>%
+  filter(!prolific_pid %in% c("651090beae417ded35c4ef2f"))%>%
   pivot_wider(
     names_from = trial_type,
     values_from = response
@@ -65,7 +68,7 @@ dat_exp2 <-
   select(prolific_pid, goal_condition, decision_structure, 
          chosen_question, chose_which_contaminated, chose_which_uncontaminated, 
          base_rate, trial_id, `survey-text`) %>%
-  mutate(goal_condition = as.factor(goal_condition),
+  mutate(goal_condition = factor(goal_condition, levels = c("uncont", "cont")),
          decision_structure = as.factor(decision_structure),
          prolific_pid = as.factor(prolific_pid)) %>%
   mutate(chose_which_contaminated = tobool(chose_which_contaminated),
@@ -87,6 +90,9 @@ dat_exp1<-
          | (grepl("contaminant", response_lowercase, fixed = TRUE)
             & !grepl("not contaminant", response_lowercase, fixed = TRUE)
             & !grepl("uncontaminant", response_lowercase, fixed = TRUE))
+         | (grepl("contamine", response_lowercase, fixed = TRUE)
+            & !grepl("not contamine", response_lowercase, fixed = TRUE)
+            & !grepl("uncontamine", response_lowercase, fixed = TRUE) )
          | (grepl("poison", response_lowercase, fixed = TRUE) 
             & !grepl("not poison", response_lowercase, fixed = TRUE))
          | (grepl("dirty", response_lowercase, fixed = TRUE) 
@@ -104,6 +110,8 @@ dat_exp1<-
          | grepl("not contaminated", response_lowercase, fixed = TRUE)
          | grepl("uncontaminant", response_lowercase, fixed = TRUE)
          | grepl("not contaminant", response_lowercase, fixed = TRUE)
+         | grepl("uncontiminated", response_lowercase, fixed = TRUE)
+         | grepl("not contminated", response_lowercase, fixed = TRUE)
          | grepl("not poison", response_lowercase, fixed = TRUE)
          | grepl("not dirty", response_lowercase, fixed = TRUE)
          | grepl("not dangerous", response_lowercase, fixed = TRUE)
@@ -175,7 +183,7 @@ exp1_plt <-
                     group = goal_condition),
                 width = 0.2)+
   scale_y_continuous(limits = c(0,1), breaks = c(0, 0.25, 0.5, 0.75, 1))+
-  scale_color_manual(values = c("#B2182B", "#2166AC"))+
+  scale_color_manual(values = c("#2166AC", "#B2182B"))+
   xlab("Base rate of contamination")+
   ylab("P(Which are uncontaminated?)")
 
@@ -237,7 +245,9 @@ exp2_setID_plt
 
 ```{r regression}
 mod_exp1 <- 
-  glm(chose_which_uncontaminated ~ goal_condition*base_rate, data = dat_exp1_coded, family = "binomial")
+  glm(chose_which_uncontaminated ~ goal_condition*base_rate, data = dat_exp1_coded,
+      family = "binomial",
+      contrasts = list(goal_condition = "contr.sum", base_rate = "contr.sum"))
 
 
 summary(mod_exp1)
@@ -245,7 +255,9 @@ summary(mod_exp1)
 
 ```{r}
 mod_exp2 <- 
-  glm(chose_which_uncontaminated ~ goal_condition*decision_structure, data = dat_exp2, family = "binomial")
+  glm(chose_which_uncontaminated ~ goal_condition*decision_structure, data = dat_exp2,
+      family = "binomial",
+      contrasts = list(goal_condition = "contr.sum", decision_structure = "contr.sum"))
 
 
 summary(mod_exp2)
