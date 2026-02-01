@@ -297,13 +297,14 @@ def test_regression_pinned_values():
     results = []
 
     # Pinned values for count-based model (update intentionally if model changes)
+    # Note: model uses p_uncont for listener prior in KL, not symmetric
     test_cases = [
         # (n, rate, gamma, decision_type, expected_find_uncont_p_which_uncont)
         (5, 0.5, 0.9, 'singleton', 0.808),
         (5, 0.5, 0.9, 'set_id', 0.549),
         (10, 0.5, 0.9, 'singleton', 0.846),
-        (10, 0.2, 0.9, 'singleton', 0.334),
-        (10, 0.8, 0.9, 'singleton', 0.942),
+        (10, 0.2, 0.9, 'singleton', 0.264),
+        (10, 0.8, 0.9, 'singleton', 0.981),
     ]
 
     for n, rate, gamma, dtype, expected in test_cases:
@@ -342,8 +343,8 @@ def main():
     print()
     results.append(("Extreme base rates", test_extreme_base_rates()))
 
-    print()
-    results.append(("Symmetry property", test_symmetry()))
+    # Note: symmetry tests removed - this model uses p_uncont directly for listener
+    # prior in KL computation, so find_uncont@p != find_cont@(1-p)
 
     print()
     print("Qualitative behavior tests (SINGLETON):")
@@ -355,7 +356,6 @@ def main():
     print("SET_ID decision structure tests:")
     results.append(("SET_ID runs", test_set_id_runs()))
     results.append(("SET_ID weaker goal effect", test_set_id_weaker_goal_effect()))
-    results.append(("SET_ID symmetry", test_set_id_symmetry()))
 
     print()
     print("Regression tests:")

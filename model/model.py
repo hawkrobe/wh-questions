@@ -174,8 +174,6 @@ class Model:
         weights = np.zeros((2, len(configs), n + 1))
 
         for q in range(2):
-            p_match = p if q == 1 else (1 - p)
-
             for k_idx, (n_c, n_u) in enumerate(configs):
                 n_q = n - n_c - n_u
                 n_known_match = n_u if q == 1 else n_c
@@ -189,7 +187,7 @@ class Model:
                                 continue
 
                             comb_factor = binom[n_known_match, m_match] * binom[n_known_other, m_other] * binom[n_q, m_unk]
-                            kl = self._compute_kl_composition(q, n_c, n_u, m_match, m_other, m_unk, p_match, n)
+                            kl = self._compute_kl_composition(q, n_c, n_u, m_match, m_other, m_unk, p, n)
 
                             if np.isfinite(kl):
                                 w = comb_factor * np.exp(self.alpha_r * (-kl - self.length_cost * m_total))
