@@ -10,9 +10,10 @@ format: html
 library(tidyverse)
 library(tidyboot)
 library(ggthemes)
+library(here)
 
 # Path for saving figures
-fig_path <- "../latex/figures/"
+fig_path <- here("analysis", "figures")
 dir.create(fig_path, showWarnings = FALSE, recursive = TRUE)
 ```
 
@@ -22,7 +23,7 @@ dir.create(fig_path, showWarnings = FALSE, recursive = TRUE)
 
 ```{r exp1-load}
 dat_exp1_raw <-
-  list.files(path = "./experiment1_data/",
+  list.files(path = here("data", "experiment1"),
              pattern = "\\.csv$",
              full.names = TRUE) |>
   map_df(\(x) read_csv(x, col_types = cols(.default = "c"))) |>
@@ -171,7 +172,7 @@ exp1_plot <- ggplot(dat_exp1_summary,
 
 exp1_plot
 
-ggsave(paste0(fig_path, "exp1_results.pdf"), exp1_plot, width = 5, height = 4)
+ggsave(file.path(fig_path, "exp1_results.pdf"), exp1_plot, width = 5, height = 4)
 ```
 
 ### Logistic Regression
@@ -205,7 +206,7 @@ summary(mod_exp1)
 
 ```{r exp2-load}
 dat_exp2_raw <-
-  list.files(path = "./experiment2_data/",
+  list.files(path = here("data", "experiment2"),
              pattern = "\\.csv$",
              full.names = TRUE) |>
   map_df(\(x) read_csv(x, col_types = cols(.default = "c"))) |>
@@ -279,7 +280,7 @@ exp2_plot <- ggplot(dat_exp2_summary,
 
 exp2_plot
 
-ggsave(paste0(fig_path, "exp2_results.pdf"), exp2_plot, width = 5, height = 4)
+ggsave(file.path(fig_path, "exp2_results.pdf"), exp2_plot, width = 5, height = 4)
 ```
 
 ### Logistic Regression
