@@ -1,5 +1,5 @@
 ---
-title: "Wh-Question Polarity Model: Experiment Simulations"
+title: "Wh-Question Polarity Model: Simulations & Model Comparison"
 format:
   html:
     code-fold: true
@@ -23,181 +23,663 @@ from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import minimize
+from scipy.special import comb
+from scipy.stats import binom
 
 # Configuration
 SCRIPT_DIR = Path(".").resolve()
-MODEL_SCRIPT = SCRIPT_DIR / "wh-questions-mention-some.py"
 
 matplotlib.rcParams.update({'pdf.fonttype': 42, 'font.family': 'sans-serif', 'font.size': 11})
-COLORS = {'find': '#2166AC', 'avoid': '#B2182B'}
+COLORS = {'find_uncont': '#4DAF4A', 'find_cont': '#A50F15'}  # Green/red to match empirical figures
 ```
 
-```{python}
-@dataclass
-class Results:
-    """Experiment results with predictions per condition."""
-    n_vials: int
-    base_rates: list[float]
-    conditions: dict[str, dict[str, list[float]]] = field(default_factory=dict)
-
-
-def run_model(n_vials: int, contamination_rate: float, decision_type: str = "singleton") -> dict | None:
-    """Run the model and return predictions, or None on failure."""
-    try:
-        result = subprocess.run(
-            ['python', str(MODEL_SCRIPT), str(n_vials), str(contamination_rate), decision_type],
-            capture_output=True, text=True, timeout=180, cwd=SCRIPT_DIR
-        )
-        if result.returncode == 0:
-            return json.loads(result.stdout.strip().split('\n')[-1])
-        print(f"  Error: {result.stderr[:100]}")
-    except Exception as e:
-        print(f"  {type(e).__name__}: {e}")
-    return None
-
-
-def style_axis(ax: plt.Axes, xlabel: str, ylabel: str, xlim: tuple, title: str = None) -> None:
-    """Apply consistent styling to an axis."""
-    ax.axhline(0.5, color='gray', linestyle=':', alpha=0.5, linewidth=1)
-    ax.set(xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=(0, 1))
-    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-    ax.legend(loc='center left', frameon=False, title='Goal')
-    ax.spines[['top', 'right']].set_visible(False)
-    if title:
-        ax.set_title(title, fontsize=12, fontweight='bold')
-```
-
-## Experiment 1: Goal × Base Rate
-
-Tests the core prediction that question choice is driven by **goal-alignment**: questioners prefer asking about the category they want to identify.
-
-- **Goal** (between): FIND_UNCONTAMINATED vs AVOID_CONTAMINATION
-- **Base rate** (within): 10% to 90% contamination
-- **Fixed**: N=5 vials, singleton selection
+## Model Functions
 
 ```{python}
-def run_exp1(n_vials: int = 5, base_rates: list[float] | None = None) -> Results:
-    """Exp 1: Goal × Base Rate (singleton selection)."""
-    if base_rates is None:
-        base_rates = list(np.arange(0.1, 0.95, 0.05))
+# RSA Model Components
 
-    print(f"Running Exp 1: N={n_vials}, {len(base_rates)} base rates")
-    results = Results(n_vials=n_vials, base_rates=base_rates, conditions={
-        'find': {'p_uncont': [], 'p_cont': []},
-        'avoid': {'p_uncont': [], 'p_cont': []}
-    })
+def singleton_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials):
+    """DPValue for singleton decision: pick one vial."""
+    n_remaining = n_vials - m
+    goal_matches = (g == 0 and q == 1) or (g == 1 and q == 0)
 
-    for i, br in enumerate(base_rates):
-        print(f"  [{i+1}/{len(base_rates)}] BR={br:.2f}", end="", flush=True)
-        if res := run_model(n_vials, br, "singleton"):
-            results.conditions['find']['p_uncont'].append(res['find_uncontam']['p_which_uncont'])
-            results.conditions['find']['p_cont'].append(res['find_uncontam']['p_which_cont'])
-            results.conditions['avoid']['p_uncont'].append(res['avoid_contam']['p_which_uncont'])
-            results.conditions['avoid']['p_cont'].append(res['avoid_contam']['p_which_cont'])
-            print(f" ✓")
+    if m == 0:
+        if q == 1:
+            return 0.0 if g == 0 else 1.0
         else:
-            for cond in results.conditions.values():
-                cond['p_uncont'].append(np.nan)
-                cond['p_cont'].append(np.nan)
-            print(f" ✗")
-    return results
+            return 1.0 if g == 0 else 0.0
 
-exp1 = run_exp1(n_vials=5)
+    if n_remaining == 0:
+        return 1.0 if goal_matches else 0.0
+
+    util_mentioned = 1.0 if goal_matches else 0.0
+    util_remaining = p_uncont if g == 0 else (1 - p_uncont)
+
+    weight_mentioned = m * np.exp(alpha_policy * util_mentioned)
+    weight_remaining = n_remaining * np.exp(alpha_policy * util_remaining)
+    total = weight_mentioned + weight_remaining
+
+    p_pick_mentioned = weight_mentioned / total
+    p_pick_remaining = weight_remaining / total
+
+    return p_pick_mentioned * util_mentioned + p_pick_remaining * util_remaining
+
+
+def f1_score(tp, total_real, total_guess):
+    if total_real == 0 or total_guess == 0:
+        return 0.0
+    precision = tp / total_guess
+    recall = tp / total_real
+    if precision + recall == 0:
+        return 0.0
+    return 2 * precision * recall / (precision + recall)
+
+
+def count_literal_posterior(q, m, w, p_uncont, n_vials):
+    p = p_uncont
+    n_remaining = n_vials - m
+
+    if m == 0:
+        if q == 1:
+            return 1.0 if w == 0 else 0.0
+        else:
+            return 1.0 if w == n_vials else 0.0
+
+    if q == 1:
+        w_remaining = w - m
+        if w_remaining < 0 or w_remaining > n_remaining:
+            return 0.0
+        return comb(n_remaining, w_remaining, exact=True) * \
+               (p ** w_remaining) * ((1 - p) ** (n_remaining - w_remaining))
+    else:
+        if w < 0 or w > n_remaining:
+            return 0.0
+        return comb(n_remaining, w, exact=True) * \
+               (p ** w) * ((1 - p) ** (n_remaining - w))
+
+
+def count_expected_f1(g, q, m, k, p_uncont, n_vials):
+    n_remaining = n_vials - m
+
+    if q == 1:
+        if k < m:
+            return 0.0
+        k_from_remaining = k - m
+    else:
+        if k > n_remaining:
+            return 0.0
+        k_from_remaining = k
+
+    if m == 0:
+        if q == 1:
+            if g == 0:
+                return 0.0
+            else:
+                if k == n_vials:
+                    return 0.0
+                return f1_score(n_vials - k, n_vials, n_vials - k)
+        else:
+            if g == 0:
+                if k == 0:
+                    return 0.0
+                return f1_score(k, n_vials, k)
+            else:
+                return 0.0
+
+    expected_f1 = 0.0
+    for w in range(n_vials + 1):
+        prob_w = count_literal_posterior(q, m, w, p_uncont, n_vials)
+        if prob_w < 1e-15:
+            continue
+
+        if n_remaining == 0:
+            e_tp_remaining = 0.0
+        else:
+            if q == 1:
+                w_remaining = w - m
+            else:
+                w_remaining = w
+            e_tp_remaining = w_remaining * k_from_remaining / n_remaining if n_remaining > 0 else 0.0
+
+        if g == 0:
+            if q == 1:
+                e_tp = m + e_tp_remaining
+            else:
+                e_tp = e_tp_remaining
+
+            if w == 0 or k == 0:
+                f1 = 0.0
+            else:
+                f1 = 2 * e_tp / (w + k)
+        else:
+            n_cont = n_vials - w
+            k_cont = n_vials - k
+
+            if q == 1:
+                w_remaining = w - m
+                cont_remaining = n_remaining - w_remaining
+            else:
+                cont_remaining = n_remaining - w
+
+            guessed_cont_remaining = n_remaining - k_from_remaining
+            if n_remaining == 0:
+                e_tp_cont_remaining = 0.0
+            else:
+                e_tp_cont_remaining = guessed_cont_remaining * cont_remaining / n_remaining
+
+            if q == 0:
+                e_tp_cont = m + e_tp_cont_remaining
+            else:
+                e_tp_cont = e_tp_cont_remaining
+
+            if n_cont == 0 or k_cont == 0:
+                f1 = 0.0
+            else:
+                f1 = 2 * e_tp_cont / (n_cont + k_cont)
+
+        expected_f1 += prob_w * f1
+
+    return expected_f1
+
+
+def setid_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials):
+    """DPValue for set_id decision: classify all vials."""
+    utilities = []
+    for k in range(n_vials + 1):
+        util = count_expected_f1(g, q, m, k, p_uncont, n_vials)
+        utilities.append(util)
+
+    utilities = np.array(utilities)
+    weights = np.exp(alpha_policy * utilities)
+    probs = weights / weights.sum()
+    return np.sum(probs * utilities)
+
+
+def kl_binary(p_l, p_s):
+    if p_s <= 0 or p_s >= 1:
+        return float('inf')
+    kl = 0.0
+    if p_l > 0:
+        kl += p_l * np.log(p_l / p_s)
+    if p_l < 1:
+        kl += (1 - p_l) * np.log((1 - p_l) / (1 - p_s))
+    return kl
+
+
+def r0_distribution(q, n_cont, n_uncont, alpha_r, gamma, length_cost, p_uncont, n_vials):
+    """Compute R0 distribution for given knowledge config."""
+    n_unk = n_vials - n_cont - n_uncont
+    p = p_uncont
+
+    response_weights = np.zeros(n_vials + 1)
+
+    if q == 1:
+        n_match = n_uncont
+        n_other = n_cont
+    else:
+        n_match = n_cont
+        n_other = n_uncont
+
+    for m_match in range(n_match + 1):
+        for m_other in range(n_other + 1):
+            for m_unk in range(n_unk + 1):
+                m = m_match + m_other + m_unk
+                if m > n_vials:
+                    continue
+
+                comb_factor = (comb(n_match, m_match, exact=True) *
+                               comb(n_other, m_other, exact=True) *
+                               comb(n_unk, m_unk, exact=True))
+
+                if m == 0:
+                    kl = (n_match * (-np.log(max(1e-10, 1 - gamma))) +
+                          n_other * (-np.log(max(1e-10, gamma))) +
+                          n_unk * np.log(2))
+                else:
+                    kl = (m_match * (-np.log(max(1e-10, gamma))) +
+                          m_other * (-np.log(max(1e-10, 1 - gamma))) +
+                          m_unk * np.log(2))
+                    kl += (n_match - m_match) * kl_binary(p, gamma)
+                    kl += (n_other - m_other) * kl_binary(p, 1 - gamma)
+                    kl += (n_unk - m_unk) * kl_binary(p, 0.5)
+
+                if np.isfinite(kl):
+                    response_weights[m] += comb_factor * np.exp(alpha_r * (-kl - length_cost * m))
+
+    total = response_weights.sum()
+    if total == 0:
+        return {0: 1.0}
+    return {m: w/total for m, w in enumerate(response_weights) if w/total > 1e-10}
+
+
+def q1_probability(g, decision_type, alpha_r, alpha_q, alpha_policy, gamma, length_cost,
+                   p_uncont, n_vials):
+    """Compute P(WHICH_UNCONT) for given goal and decision type."""
+    configs = [(n_c, n_u) for n_c in range(n_vials+1) for n_u in range(n_vials+1-n_c)]
+
+    expected_value = {0: 0.0, 1: 0.0}
+
+    for q in [0, 1]:
+        total_ev = 0.0
+        for n_c, n_u in configs:
+            r0 = r0_distribution(q, n_c, n_u, alpha_r, gamma, length_cost, p_uncont, n_vials)
+            ev_this = 0.0
+            for m, prob_m in r0.items():
+                if decision_type == 'singleton':
+                    dpv = singleton_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials)
+                else:
+                    dpv = setid_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials)
+                ev_this += prob_m * dpv
+            total_ev += ev_this / len(configs)
+        expected_value[q] = total_ev
+
+    exp_vals = np.array([np.exp(alpha_q * expected_value[q]) for q in [0, 1]])
+    probs = exp_vals / exp_vals.sum()
+    return probs[1]  # P(WHICH_UNCONT)
 ```
 
+## Qualitative Model Predictions
+
 ```{python}
-#| label: fig-exp1
-#| fig-cap: "Experiment 1: Goal-polarity alignment across base rates"
+N_VIALS = 10
 
-fig, ax = plt.subplots(figsize=(6, 4))
-br = np.array(exp1.base_rates)
+# Joint parameters fit to both experiments (with tied alpha_R = alpha_Q)
+PARAMS = {
+    'alpha_r': 3.0,
+    'alpha_q': 3.0,
+    'alpha_policy': 3.0,
+    'gamma': 0.75,
+    'length_cost': 0.01
+}
 
-ax.plot(br, exp1.conditions['find']['p_uncont'], 'o-', color=COLORS['find'], linewidth=2, markersize=5)
-ax.plot(br, exp1.conditions['avoid']['p_uncont'], 's--', color=COLORS['avoid'], linewidth=2, markersize=5)
+# Aliases for backward compatibility
+EXP1_PARAMS = PARAMS
+EXP2_PARAMS = PARAMS
+```
 
-# Direct labels on curves (positioned to avoid overlap)
-ax.text(0.45, 0.92, 'Find uncontaminated', color=COLORS['find'], fontsize=11, fontweight='bold')
-ax.text(0.45, 0.08, 'Avoid contaminated', color=COLORS['avoid'], fontsize=11, fontweight='bold')
+### Experiment 1: Goal × Base Rate
 
-ax.axhline(0.5, color='gray', linestyle=':', alpha=0.5, linewidth=1)
-ax.set(xlabel='Base rate of contamination', ylabel='P("Which are uncontaminated?")', xlim=(0.05, 0.95), ylim=(0, 1))
+```{python}
+#| label: fig-exp1-predictions
+#| fig-cap: "Model predictions for Experiment 1: Goal alignment across base rates"
+
+# Match the empirical base rates from Experiment 1
+base_rates = np.array([0.2, 0.5, 0.8])
+pred_uncont = []
+pred_cont = []
+
+print("Computing Exp 1 predictions...")
+for br in base_rates:
+    p_uncont = 1 - br
+    p_find_uncont = q1_probability(0, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+    p_find_cont = q1_probability(1, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+    pred_uncont.append(p_find_uncont)
+    pred_cont.append(p_find_cont)
+    print(f"  BR={br}: find_uncont={p_find_uncont:.2f}, find_cont={p_find_cont:.2f}")
+
+fig, ax = plt.subplots(figsize=(5, 4))
+
+# Line plot matching empirical figure style
+ax.plot(base_rates, pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=8, label='Find uncontaminated')
+ax.plot(base_rates, pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=8, label='Find contaminated')
+
+ax.set_xlabel('Base rate of contamination')
+ax.set_ylabel('P("Which are uncontaminated?")')
+ax.set_xticks(base_rates)
+ax.set_xticklabels(['20%', '50%', '80%'])
+ax.set_ylim(0, 1)
 ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax.legend(title='Goal', loc='upper left', frameon=False)
 ax.spines[['top', 'right']].set_visible(False)
 
 plt.tight_layout()
+plt.savefig(SCRIPT_DIR / 'exp1_model_predictions.pdf', format='pdf', bbox_inches='tight')
 plt.show()
 ```
 
-## Experiment 2: Decision Structure × Goal
-
-Tests whether goal-alignment depends on the **decision problem structure**. For singleton selection, mention-some answers suffice. For set identification, exhaustivity is needed.
-
-- **Decision structure** (between): Singleton vs Set ID
-- **Goal** (between): FIND_UNCONTAMINATED vs AVOID_CONTAMINATION
-- **Base rate** (within): 20%, 35%, 50%, 65%, 80%
-- **Fixed**: N=5 vials
+### Experiment 2: Goal × Decision Structure
 
 ```{python}
-def run_exp2(n_vials: int = 4, base_rates: list[float] | None = None) -> Results:
-    """Exp 2: Decision Structure × Goal."""
-    if base_rates is None:
-        base_rates = [0.2, 0.35, 0.5, 0.65, 0.8]
+#| label: fig-exp2-predictions
+#| fig-cap: "Model predictions for Experiment 2: Goal alignment depends on decision structure"
 
-    print(f"Running Exp 2: N={n_vials}, {len(base_rates)} base rates × 2 decision types")
-    results = Results(n_vials=n_vials, base_rates=base_rates, conditions={
-        'singleton': {'find_p': [], 'avoid_p': []},
-        'set_id': {'find_p': [], 'avoid_p': []}
-    })
+# Compute predictions at 50% base rate for both decision types
+p_uncont = 0.5
+predictions = {}
 
-    for dt in ['singleton', 'set_id']:
-        print(f"  {dt}:", end="", flush=True)
-        for br in base_rates:
-            if res := run_model(n_vials, br, dt):
-                results.conditions[dt]['find_p'].append(res['find_uncontam']['p_which_uncont'])
-                results.conditions[dt]['avoid_p'].append(res['avoid_contam']['p_which_uncont'])
-                print(f" ✓", end="", flush=True)
-            else:
-                results.conditions[dt]['find_p'].append(np.nan)
-                results.conditions[dt]['avoid_p'].append(np.nan)
-                print(f" ✗", end="", flush=True)
-        print()
-    return results
+for dt in ['singleton', 'set_id']:
+    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
+        p = q1_probability(g, dt, **EXP2_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+        predictions[(dt, g_name)] = p
+        print(f"{dt}, {g_name}: {p:.2%}")
 
-exp2 = run_exp2(n_vials=5)
-```
+# Bar plot matching empirical figure style (grouped by decision structure)
+fig, ax = plt.subplots(figsize=(5, 4))
 
-```{python}
-#| label: fig-exp2
-#| fig-cap: "Experiment 2: Goal effect is strong for singleton but reduced for set identification"
+x = np.array([0, 1])  # Singleton, Set ID
+width = 0.35
 
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-br = np.array(exp2.base_rates)
+# Group bars by decision structure, color by goal
+find_uncont_vals = [predictions[('singleton', 'find_uncont')], predictions[('set_id', 'find_uncont')]]
+find_cont_vals = [predictions[('singleton', 'find_cont')], predictions[('set_id', 'find_cont')]]
 
-for ax, (dt, title) in zip(axes, [('singleton', 'Singleton selection'), ('set_id', 'Set identification (F1 score)')]):
-    find_y = exp2.conditions[dt]['find_p']
-    avoid_y = exp2.conditions[dt]['avoid_p']
+ax.bar(x - width/2, find_uncont_vals, width, label='Find uncontaminated', color=COLORS['find_uncont'])
+ax.bar(x + width/2, find_cont_vals, width, label='Find contaminated', color=COLORS['find_cont'])
 
-    ax.plot(br, find_y, 'o-', color=COLORS['find'], linewidth=2, markersize=6, label='find_uncontam')
-    ax.plot(br, avoid_y, 'o-', color=COLORS['avoid'], linewidth=2, markersize=6, label='avoid_contam')
-
-    ax.axhline(0.5, color='gray', linestyle=':', alpha=0.5, linewidth=1)
-    ax.set(xlabel='Base rate of contamination', ylabel='P("Which are uncontaminated?")', xlim=(0.15, 0.85), ylim=(0, 1))
-    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-    ax.set_title(title, fontsize=12, fontweight='bold')
-    ax.spines[['top', 'right']].set_visible(False)
-    ax.legend(title='goal', loc='upper left', frameon=False)
+ax.set_xlabel('Decision structure')
+ax.set_ylabel('P("Which are not contaminated?")')
+ax.set_xticks(x)
+ax.set_xticklabels(['Singleton', 'Set ID'])
+ax.set_ylim(0, 1)
+ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax.legend(title='Goal', loc='upper right', frameon=False)
+ax.spines[['top', 'right']].set_visible(False)
 
 plt.tight_layout()
-plt.savefig(SCRIPT_DIR / 'exp2_figure.pdf', format='pdf', bbox_inches='tight')
+plt.savefig(SCRIPT_DIR / 'exp2_model_predictions.pdf', format='pdf', bbox_inches='tight')
 plt.show()
-print(f"Saved: {SCRIPT_DIR / 'exp2_figure.pdf'}")
+
+# Print effect sizes
+singleton_effect = predictions[('singleton', 'find_uncont')] - predictions[('singleton', 'find_cont')]
+setid_effect = predictions[('set_id', 'find_uncont')] - predictions[('set_id', 'find_cont')]
+print(f"\nSingleton effect: {singleton_effect:.0%}")
+print(f"Set-ID effect: {setid_effect:.0%}")
+print(f"Interaction: {singleton_effect - setid_effect:.0%}")
 ```
 
-## Save Results
+### Combined Figure
 
 ```{python}
-results_path = SCRIPT_DIR / "simulation_results.json"
-with open(results_path, 'w') as f:
-    json.dump({'exp1': asdict(exp1), 'exp2': asdict(exp2)}, f, indent=2)
-print(f"Saved: {results_path}")
+#| label: fig-combined-predictions
+#| fig-cap: "Combined model predictions for both experiments"
+
+# Recompute Exp 1 predictions with EXP1_PARAMS
+base_rates = np.array([0.2, 0.5, 0.8])
+exp1_pred_uncont = []
+exp1_pred_cont = []
+
+for br in base_rates:
+    p_uncont = 1 - br
+    p_find_uncont = q1_probability(0, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+    p_find_cont = q1_probability(1, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+    exp1_pred_uncont.append(p_find_uncont)
+    exp1_pred_cont.append(p_find_cont)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
+
+# Panel A: Experiment 1
+ax1.plot(base_rates, exp1_pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=8, label='Find uncontaminated')
+ax1.plot(base_rates, exp1_pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=8, label='Find contaminated')
+ax1.set_xlabel('Base rate of contamination')
+ax1.set_ylabel('P("Which are uncontaminated?")')
+ax1.set_xticks(base_rates)
+ax1.set_xticklabels(['20%', '50%', '80%'])
+ax1.set_ylim(0, 1)
+ax1.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax1.legend(title='Goal', loc='upper left', frameon=False, fontsize=9)
+ax1.spines[['top', 'right']].set_visible(False)
+ax1.set_title('A. Experiment 1: Goal × Base Rate', fontsize=11, fontweight='bold', loc='left')
+
+# Panel B: Experiment 2
+x = np.array([0, 1])
+width = 0.35
+find_uncont_vals = [predictions[('singleton', 'find_uncont')], predictions[('set_id', 'find_uncont')]]
+find_cont_vals = [predictions[('singleton', 'find_cont')], predictions[('set_id', 'find_cont')]]
+
+ax2.bar(x - width/2, find_uncont_vals, width, label='Find uncontaminated', color=COLORS['find_uncont'])
+ax2.bar(x + width/2, find_cont_vals, width, label='Find contaminated', color=COLORS['find_cont'])
+ax2.set_xlabel('Decision structure')
+ax2.set_ylabel('P("Which are uncontaminated?")')
+ax2.set_xticks(x)
+ax2.set_xticklabels(['Singleton', 'Set ID'])
+ax2.set_ylim(0, 1)
+ax2.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax2.legend(title='Goal', loc='upper right', frameon=False, fontsize=9)
+ax2.spines[['top', 'right']].set_visible(False)
+ax2.set_title('B. Experiment 2: Goal × Decision', fontsize=11, fontweight='bold', loc='left')
+
+plt.tight_layout()
+plt.savefig(SCRIPT_DIR / 'model_predictions.pdf', format='pdf', bbox_inches='tight')
+plt.show()
+```
+
+## Model Comparison: Experiment 1
+
+```{python}
+# Experiment 1 data
+EXP1_DATA = {
+    ('uncont', 0.2): (10, 23),
+    ('uncont', 0.5): (17, 36),
+    ('uncont', 0.8): (21, 31),
+    ('cont', 0.2): (4, 28),
+    ('cont', 0.5): (2, 21),
+    ('cont', 0.8): (7, 24),
+}
+
+def compute_waic_brier(predictions, data):
+    """Compute WAIC and Brier score over individual observations."""
+    total_ll = 0.0
+    total_brier = 0.0
+    total_n = 0
+
+    for key, (successes, total) in data.items():
+        pred_p = np.clip(predictions[key], 1e-10, 1 - 1e-10)
+        total_ll += successes * np.log(pred_p) + (total - successes) * np.log(1 - pred_p)
+        total_brier += successes * (1 - pred_p)**2 + (total - successes) * pred_p**2
+        total_n += total
+
+    waic = -2 * total_ll
+    brier = total_brier / total_n
+    return waic, brier
+
+
+# Null model
+null_pred = {key: 0.5 for key in EXP1_DATA}
+null_waic, null_brier = compute_waic_brier(null_pred, EXP1_DATA)
+
+# Goal-matching model (MLE)
+uncont_s = sum(EXP1_DATA[k][0] for k in EXP1_DATA if k[0] == 'uncont')
+uncont_t = sum(EXP1_DATA[k][1] for k in EXP1_DATA if k[0] == 'uncont')
+cont_s = sum(EXP1_DATA[k][0] for k in EXP1_DATA if k[0] == 'cont')
+cont_t = sum(EXP1_DATA[k][1] for k in EXP1_DATA if k[0] == 'cont')
+
+gm_pred = {k: (uncont_s/uncont_t if k[0] == 'uncont' else cont_s/cont_t) for k in EXP1_DATA}
+gm_waic, gm_brier = compute_waic_brier(gm_pred, EXP1_DATA)
+
+# Full RSA model (use fitted Exp 2 params)
+rsa_pred = {}
+for (goal, br) in EXP1_DATA:
+    g = 0 if goal == 'uncont' else 1
+    p_uncont = 1 - br
+    rsa_pred[(goal, br)] = q1_probability(g, 'singleton', **EXP2_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+rsa_waic, rsa_brier = compute_waic_brier(rsa_pred, EXP1_DATA)
+
+import pandas as pd
+from IPython.display import Markdown
+
+# Build model comparison dataframe
+exp1_models = pd.DataFrame({
+    'Model': ['Null', 'Goal-matching', 'Full RSA'],
+    'k': [0, 2, 5],
+    'WAIC': [null_waic, gm_waic, rsa_waic],
+    'Brier': [null_brier, gm_brier, rsa_brier]
+})
+
+# Find best (lowest) WAIC
+best_waic_idx = exp1_models['WAIC'].idxmin()
+
+# Format with bold for best
+def format_exp1_row(row, idx):
+    if idx == best_waic_idx:
+        return f"| **{row['Model']}** | {row['k']} | **{row['WAIC']:.1f}** | **{row['Brier']:.3f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['WAIC']:.1f} | {row['Brier']:.3f} |"
+
+table_md = "| Model | k | WAIC | Brier |\n|:------|--:|-----:|------:|\n"
+for idx, row in exp1_models.iterrows():
+    table_md += format_exp1_row(row, idx) + "\n"
+
+display(Markdown(f"**Experiment 1 Model Comparison**\n\n{table_md}"))
+```
+
+## Model Comparison: Experiment 2
+
+```{python}
+# Experiment 2 data
+EXP2_DATA = {
+    'singleton': {
+        'find_uncont': (29, 38),
+        'find_cont': (9, 42)
+    },
+    'set_id': {
+        'find_uncont': (24, 36),
+        'find_cont': (18, 44)
+    }
+}
+
+def exp2_waic_brier(predictions):
+    """Compute WAIC and Brier for Exp 2 format."""
+    total_ll = 0.0
+    total_brier = 0.0
+    total_n = 0
+
+    for dt in ['singleton', 'set_id']:
+        for goal in ['find_uncont', 'find_cont']:
+            s, t = EXP2_DATA[dt][goal]
+            pred_p = np.clip(predictions[dt][goal], 1e-10, 1 - 1e-10)
+            total_ll += s * np.log(pred_p) + (t - s) * np.log(1 - pred_p)
+            total_brier += s * (1 - pred_p)**2 + (t - s) * pred_p**2
+            total_n += t
+
+    return -2 * total_ll, total_brier / total_n
+
+
+# Null model
+null2_pred = {'singleton': {'find_uncont': 0.5, 'find_cont': 0.5},
+              'set_id': {'find_uncont': 0.5, 'find_cont': 0.5}}
+null2_waic, null2_brier = exp2_waic_brier(null2_pred)
+
+# Goal-matching model (same effect for both decision types)
+all_uncont_s = EXP2_DATA['singleton']['find_uncont'][0] + EXP2_DATA['set_id']['find_uncont'][0]
+all_uncont_t = EXP2_DATA['singleton']['find_uncont'][1] + EXP2_DATA['set_id']['find_uncont'][1]
+all_cont_s = EXP2_DATA['singleton']['find_cont'][0] + EXP2_DATA['set_id']['find_cont'][0]
+all_cont_t = EXP2_DATA['singleton']['find_cont'][1] + EXP2_DATA['set_id']['find_cont'][1]
+
+p_uncont_goal = all_uncont_s / all_uncont_t
+p_cont_goal = all_cont_s / all_cont_t
+
+gm2_pred = {
+    'singleton': {'find_uncont': p_uncont_goal, 'find_cont': p_cont_goal},
+    'set_id': {'find_uncont': p_uncont_goal, 'find_cont': p_cont_goal}
+}
+gm2_waic, gm2_brier = exp2_waic_brier(gm2_pred)
+
+# Exhaustive-only RSA (use set_id utility for both - assumes exhaustive answers)
+exh_pred = {}
+for dt in ['singleton', 'set_id']:
+    exh_pred[dt] = {}
+    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
+        p = q1_probability(g, 'set_id', **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
+        exh_pred[dt][g_name] = p
+exh_waic, exh_brier = exp2_waic_brier(exh_pred)
+
+# Mention-some only RSA (use singleton utility for both - assumes partial answers)
+ms_pred = {}
+for dt in ['singleton', 'set_id']:
+    ms_pred[dt] = {}
+    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
+        p = q1_probability(g, 'singleton', **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
+        ms_pred[dt][g_name] = p
+ms_waic, ms_brier = exp2_waic_brier(ms_pred)
+
+# Full RSA model
+rsa2_pred = {}
+for dt in ['singleton', 'set_id']:
+    rsa2_pred[dt] = {}
+    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
+        p = q1_probability(g, dt, **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
+        rsa2_pred[dt][g_name] = p
+rsa2_waic, rsa2_brier = exp2_waic_brier(rsa2_pred)
+
+# Build model comparison dataframe for Exp 2
+exp2_models = pd.DataFrame({
+    'Model': ['Null', 'Goal-matching', 'Exhaustive-only RSA', 'Mention-some only RSA', 'Full RSA'],
+    'k': [0, 2, 5, 5, 5],
+    'WAIC': [null2_waic, gm2_waic, exh_waic, ms_waic, rsa2_waic],
+    'Brier': [null2_brier, gm2_brier, exh_brier, ms_brier, rsa2_brier]
+})
+
+# Find best (lowest) WAIC
+best_waic_idx2 = exp2_models['WAIC'].idxmin()
+
+# Format with bold for best
+def format_exp2_row(row, idx):
+    if idx == best_waic_idx2:
+        return f"| **{row['Model']}** | {row['k']} | **{row['WAIC']:.1f}** | **{row['Brier']:.3f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['WAIC']:.1f} | {row['Brier']:.3f} |"
+
+table_md2 = "| Model | k | WAIC | Brier |\n|:------|--:|-----:|------:|\n"
+for idx, row in exp2_models.iterrows():
+    table_md2 += format_exp2_row(row, idx) + "\n"
+
+display(Markdown(f"**Experiment 2 Model Comparison**\n\n{table_md2}"))
+
+# Compute interaction for later use
+data_int = (EXP2_DATA['singleton']['find_uncont'][0]/EXP2_DATA['singleton']['find_uncont'][1] -
+            EXP2_DATA['singleton']['find_cont'][0]/EXP2_DATA['singleton']['find_cont'][1]) - \
+           (EXP2_DATA['set_id']['find_uncont'][0]/EXP2_DATA['set_id']['find_uncont'][1] -
+            EXP2_DATA['set_id']['find_cont'][0]/EXP2_DATA['set_id']['find_cont'][1])
+rsa_int = (rsa2_pred['singleton']['find_uncont'] - rsa2_pred['singleton']['find_cont']) - \
+          (rsa2_pred['set_id']['find_uncont'] - rsa2_pred['set_id']['find_cont'])
+```
+
+## Summary
+
+```{python}
+# Create summary table
+summary_data = pd.DataFrame({
+    'Experiment': ['Exp 1', 'Exp 1', 'Exp 2', 'Exp 2'],
+    'Comparison': ['Null vs Goal-matching', 'Goal-matching vs RSA',
+                   'Null vs Goal-matching', 'Goal-matching vs RSA'],
+    'ΔWAIC': [null_waic - gm_waic, gm_waic - rsa_waic,
+              null2_waic - gm2_waic, gm2_waic - rsa2_waic]
+})
+
+summary_md = "| Experiment | Comparison | ΔWAIC |\n|:-----------|:-----------|------:|\n"
+for _, row in summary_data.iterrows():
+    delta = row['ΔWAIC']
+    # Positive ΔWAIC means first model is worse (higher WAIC)
+    summary_md += f"| {row['Experiment']} | {row['Comparison']} | {delta:+.1f} |\n"
+
+display(Markdown(f"**Model Comparison Summary** (positive ΔWAIC favors second model)\n\n{summary_md}"))
+```
+
+```{python}
+# Save all results
+results = {
+    'exp1_params': EXP1_PARAMS,
+    'exp2_params': EXP2_PARAMS,
+    'exp1': {
+        'data': {f"{g}_{b}": {'s': s, 't': t} for (g, b), (s, t) in EXP1_DATA.items()},
+        'models': {
+            'null': {'waic': null_waic, 'brier': null_brier},
+            'goal_matching': {'waic': gm_waic, 'brier': gm_brier},
+            'full_rsa': {'waic': rsa_waic, 'brier': rsa_brier}
+        }
+    },
+    'exp2': {
+        'data': EXP2_DATA,
+        'models': {
+            'null': {'waic': null2_waic, 'brier': null2_brier},
+            'goal_matching': {'waic': gm2_waic, 'brier': gm2_brier},
+            'exhaustive_rsa': {'waic': exh_waic, 'brier': exh_brier},
+            'mention_some_rsa': {'waic': ms_waic, 'brier': ms_brier},
+            'full_rsa': {'waic': rsa2_waic, 'brier': rsa2_brier}
+        }
+    }
+}
+
+with open(SCRIPT_DIR / 'model_comparison_results.json', 'w') as f:
+    json.dump(results, f, indent=2)
+print(f"\nResults saved to {SCRIPT_DIR / 'model_comparison_results.json'}")
 ```
