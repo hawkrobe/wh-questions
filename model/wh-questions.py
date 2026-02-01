@@ -360,9 +360,26 @@ def literal_posterior(q, m, w):
 ALPHA_POLICY = 10.0  # Soft-max temperature for action choice
 
 
+def _hypergeom_pmf(k, N, K, n):
+    """
+    Hypergeometric PMF: P(X=k) where X ~ Hypergeometric(N, K, n).
+
+    N = population size
+    K = number of success states in population
+    n = number of draws
+    k = number of observed successes
+    """
+    if k < max(0, n - (N - K)) or k > min(n, K):
+        return 0.0
+    return (_BINOM_NP[K, k] * _BINOM_NP[N - K, n - k]) / _BINOM_NP[N, n]
+
+
 def _compute_expected_f1(g, q, m, k, p):
     """
     Compute expected F1 score for SET_ID decision structure.
+
+    Uses proper E[F1] by summing over hypergeometric distribution of TP values,
+    since F1 is non-linear and E[F1] ≠ F1(E[TP]).
 
     Args:
         g: Goal (0=FIND_UNCONT, 1=FIND_CONT)
@@ -382,132 +399,112 @@ def _compute_expected_f1(g, q, m, k, p):
         if k < m:
             return 0.0  # Invalid action
         k_from_remaining = k - m  # Additional guesses from remaining
-        m_definitely_uncont = m
-        m_definitely_cont = 0
     else:  # WHICH_CONT: m vials are definitely contaminated
         # Cannot include mentioned vials as "uncont", so k <= N - m
         if k > n_remaining:
             return 0.0  # Invalid action
         k_from_remaining = k  # All guesses come from remaining
-        m_definitely_uncont = 0
-        m_definitely_cont = m
 
     # Handle edge case: m=0 means "there are none"
     if m == 0:
         if q == 1:  # WHICH_UNCONT with m=0: all are contaminated
-            # W = 0, so any guess k > 0 has precision issues
-            # F1 for FIND_UNCONT: TP=0, so F1=0
-            # F1 for FIND_CONT: we're classifying cont vials
             if g == 0:  # FIND_UNCONT
                 return 0.0  # No uncont vials exist
             else:  # FIND_CONT
-                # Guessing k as uncont means N-k as cont
-                # All N are actually cont, so TP_cont = N - k
-                # Precision_cont = (N-k)/(N-k) = 1 if k < N
-                # Recall_cont = (N-k)/N
                 if k == N_VIALS:
-                    return 0.0  # Guessed all as uncont, no cont identified
+                    return 0.0
                 recall = (N_VIALS - k) / N_VIALS
-                return 2 * 1.0 * recall / (1.0 + recall)  # F1 with precision=1
+                return 2 * 1.0 * recall / (1.0 + recall)
         else:  # WHICH_CONT with m=0: all are uncontaminated
-            # W = N, so any guess k < N has recall issues
             if g == 0:  # FIND_UNCONT
                 if k == 0:
                     return 0.0
-                precision = 1.0  # All guessed are actually uncont
                 recall = k / N_VIALS
-                return 2 * precision * recall / (precision + recall)
+                return 2 * 1.0 * recall / (1.0 + recall)
             else:  # FIND_CONT
                 return 0.0  # No cont vials exist
 
     # Normal case: m > 0
-    # Compute E[F1] over world posterior
-    # World W = total uncontaminated vials
-    # For WHICH_UNCONT: W >= m, W - m ~ Binomial(n_remaining, p)
-    # For WHICH_CONT: W <= n_remaining, W ~ Binomial(n_remaining, p)
-
+    # Compute E[F1] over world posterior AND over hypergeometric TP distribution
     expected_f1 = 0.0
     total_prob = 0.0
 
     for w_remaining in range(n_remaining + 1):
-        # Probability of this world state
+        # Probability of this world state (binomial over remaining vials)
         prob_w = _BINOM_NP[n_remaining, w_remaining] * (p ** w_remaining) * ((1-p) ** (n_remaining - w_remaining))
+
+        if prob_w < 1e-15:
+            continue
 
         if q == 1:  # WHICH_UNCONT
             W = m + w_remaining  # Total uncontaminated
         else:  # WHICH_CONT
             W = w_remaining  # Total uncontaminated (mentioned are cont)
 
-        # Compute expected TP for this world
-        # For WHICH_UNCONT: TP = m (mentioned) + E[overlap in remaining]
-        # For WHICH_CONT: TP = E[overlap in remaining]
+        # For this world, compute E[F1] over hypergeometric distribution of TP
+        # TP from remaining ~ Hypergeometric(n_remaining, w_remaining, k_from_remaining)
 
-        if q == 1:  # WHICH_UNCONT
-            # Mentioned m are definitely uncont and we guess them
-            # From remaining, we guess k_from_remaining, and w_remaining are truly uncont
-            if n_remaining > 0 and k_from_remaining > 0:
-                expected_tp_remaining = k_from_remaining * w_remaining / n_remaining
-            else:
-                expected_tp_remaining = 0
-            expected_tp = m + expected_tp_remaining
-        else:  # WHICH_CONT
-            # From remaining, we guess k_from_remaining, and w_remaining are truly uncont
-            if n_remaining > 0 and k_from_remaining > 0:
-                expected_tp = k_from_remaining * w_remaining / n_remaining
-            else:
-                expected_tp = 0
+        expected_f1_this_world = 0.0
 
-        # Compute F1 for FIND_UNCONT (identifying uncontaminated vials)
-        if g == 0:
-            if W == 0 or k == 0:
-                f1 = 0.0
-            else:
-                precision = expected_tp / k
-                recall = expected_tp / W
-                if precision + recall > 0:
-                    f1 = 2 * precision * recall / (precision + recall)
-                else:
+        for tp_remaining in range(min(k_from_remaining, w_remaining) + 1):
+            # Hypergeometric probability
+            prob_tp = _hypergeom_pmf(tp_remaining, n_remaining, w_remaining, k_from_remaining)
+
+            if prob_tp < 1e-15:
+                continue
+
+            # Compute exact F1 for this TP value
+            if g == 0:  # FIND_UNCONT
+                if q == 1:  # WHICH_UNCONT
+                    tp_uncont = m + tp_remaining  # m mentioned + tp from remaining
+                else:  # WHICH_CONT
+                    tp_uncont = tp_remaining
+
+                if W == 0 or k == 0:
                     f1 = 0.0
-        else:  # FIND_CONT
-            # F1 on contaminated vials
-            n_cont = N_VIALS - W  # True contaminated
-            k_cont = N_VIALS - k  # Guessed as contaminated
+                else:
+                    precision = tp_uncont / k
+                    recall = tp_uncont / W
+                    if precision + recall > 0:
+                        f1 = 2 * precision * recall / (precision + recall)
+                    else:
+                        f1 = 0.0
+            else:  # FIND_CONT
+                n_cont = N_VIALS - W
+                k_cont = N_VIALS - k
 
-            # TP_cont = correctly identified as cont
-            # For WHICH_UNCONT: mentioned m are uncont, so TP_cont comes from remaining
-            # For WHICH_CONT: mentioned m are cont and we correctly exclude them
-
-            if q == 1:  # WHICH_UNCONT
-                # Remaining has n_remaining - w_remaining cont vials
-                # We guess n_remaining - k_from_remaining of remaining as cont
+                # TP for contaminated = correctly identified as cont
+                # FP_uncont (guessed uncont but actually cont) = k_from_remaining - tp_remaining
+                # So TP_cont from remaining = (n_remaining - k_from_remaining) guessed as cont
+                #                             intersected with (n_remaining - w_remaining) true cont
                 cont_in_remaining = n_remaining - w_remaining
                 guessed_cont_from_remaining = n_remaining - k_from_remaining
-                if n_remaining > 0 and guessed_cont_from_remaining > 0:
-                    expected_tp_cont = guessed_cont_from_remaining * cont_in_remaining / n_remaining
-                else:
-                    expected_tp_cont = 0
-            else:  # WHICH_CONT
-                # Mentioned m are definitely cont and we exclude them (guess as cont)
-                # Plus from remaining
-                cont_in_remaining = n_remaining - w_remaining
-                guessed_cont_from_remaining = n_remaining - k_from_remaining
-                if n_remaining > 0 and guessed_cont_from_remaining > 0:
-                    expected_tp_cont_remaining = guessed_cont_from_remaining * cont_in_remaining / n_remaining
-                else:
-                    expected_tp_cont_remaining = 0
-                expected_tp_cont = m + expected_tp_cont_remaining
 
-            if n_cont == 0 or k_cont == 0:
-                f1 = 0.0
-            else:
-                precision_cont = expected_tp_cont / k_cont
-                recall_cont = expected_tp_cont / n_cont
-                if precision_cont + recall_cont > 0:
-                    f1 = 2 * precision_cont * recall_cont / (precision_cont + recall_cont)
-                else:
+                # TP_cont from remaining ~ Hypergeometric, but we can derive it:
+                # We guessed k_from_remaining as uncont, got tp_remaining correct
+                # So we guessed (k_from_remaining - tp_remaining) cont vials as uncont (false negatives)
+                # Remaining cont vials correctly identified = cont_in_remaining - (k_from_remaining - tp_remaining)
+                #                                          = cont_in_remaining - k_from_remaining + tp_remaining
+                tp_cont_remaining = max(0, cont_in_remaining - k_from_remaining + tp_remaining)
+
+                if q == 1:  # WHICH_UNCONT
+                    tp_cont = tp_cont_remaining
+                else:  # WHICH_CONT
+                    tp_cont = m + tp_cont_remaining  # m mentioned are definitely cont
+
+                if n_cont == 0 or k_cont == 0:
                     f1 = 0.0
+                else:
+                    precision_cont = tp_cont / k_cont
+                    recall_cont = tp_cont / n_cont
+                    if precision_cont + recall_cont > 0:
+                        f1 = 2 * precision_cont * recall_cont / (precision_cont + recall_cont)
+                    else:
+                        f1 = 0.0
 
-        expected_f1 += prob_w * f1
+            expected_f1_this_world += prob_tp * f1
+
+        expected_f1 += prob_w * expected_f1_this_world
         total_prob += prob_w
 
     return expected_f1 / total_prob if total_prob > 0 else 0.0
