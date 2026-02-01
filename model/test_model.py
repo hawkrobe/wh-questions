@@ -1,39 +1,22 @@
 """
-Test suite for the symmetric wh-questions model.
+Test suite for the wh-questions model.
 
-The symmetric model exploits exchangeability of vials to reduce state space
-from O(2^N) to O(N), enabling efficient computation at larger N values.
+Tests the count-based O(N²) model implementation.
 """
 
-import subprocess
-import json
 import sys
 import time
+from model import Model
 
 # Tolerance for numerical comparison (percentage points)
 TOLERANCE = 0.5
 
 
 def run_model(n_vials, contamination_rate, gamma=0.9, decision_type='singleton'):
-    """Run the symmetric model and return the results dict."""
-    result = subprocess.run(
-        ['python3', 'wh-questions.py',
-         '-n', str(n_vials),
-         '-r', str(contamination_rate),
-         '-d', decision_type,
-         '-g', str(gamma)],
-        capture_output=True,
-        text=True,
-        timeout=300
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"Model failed: {result.stderr}")
-
-    # Parse JSON from stdout (may have stderr mixed in)
-    for line in result.stdout.strip().split('\n'):
-        if line.startswith('{'):
-            return json.loads(line)
-    raise RuntimeError(f"No JSON output found: {result.stdout}")
+    """Run the model and return results dict."""
+    model = Model(gamma=gamma)
+    result = model._run(n_vials, contamination_rate, decision_type)
+    return result
 
 
 def test_runs_at_various_n():
@@ -302,6 +285,47 @@ def test_set_id_symmetry():
         return False
 
 
+def test_regression_pinned_values():
+    """
+    Regression test: pin known-good outputs to catch unintended model changes.
+
+    Note: The count-based model uses hypergeometric weighting (E[F1] over possible
+    overlaps) which differs from exact bitmask enumeration. These are pinned values
+    from the current count-based model, not the bitmask model.
+    """
+    print("Testing regression against pinned values:")
+    results = []
+
+    # Pinned values for count-based model (update intentionally if model changes)
+    test_cases = [
+        # (n, rate, gamma, decision_type, expected_find_uncont_p_which_uncont)
+        (5, 0.5, 0.9, 'singleton', 0.808),
+        (5, 0.5, 0.9, 'set_id', 0.549),
+        (10, 0.5, 0.9, 'singleton', 0.846),
+        (10, 0.2, 0.9, 'singleton', 0.334),
+        (10, 0.8, 0.9, 'singleton', 0.942),
+    ]
+
+    for n, rate, gamma, dtype, expected in test_cases:
+        print(f"  N={n}, rate={rate}, {dtype}...", end=" ")
+        try:
+            result = run_model(n, rate, gamma, decision_type=dtype)
+            actual = result['find_uncontam']['p_which_uncont']
+            diff = abs(actual - expected) * 100
+
+            if diff <= 1.0:  # 1 percentage point tolerance
+                print(f"PASS ({actual*100:.1f}%)")
+                results.append(True)
+            else:
+                print(f"FAIL (expected {expected*100:.1f}%, got {actual*100:.1f}%)")
+                results.append(False)
+        except Exception as e:
+            print(f"FAIL ({e})")
+            results.append(False)
+
+    return all(results)
+
+
 def main():
     print("=" * 60)
     print("Symmetric Wh-Questions Model Test Suite")
@@ -332,6 +356,10 @@ def main():
     results.append(("SET_ID runs", test_set_id_runs()))
     results.append(("SET_ID weaker goal effect", test_set_id_weaker_goal_effect()))
     results.append(("SET_ID symmetry", test_set_id_symmetry()))
+
+    print()
+    print("Regression tests:")
+    results.append(("Pinned values", test_regression_pinned_values()))
 
     print()
     print("=" * 60)

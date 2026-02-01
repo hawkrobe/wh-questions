@@ -16,286 +16,24 @@ execute:
 from __future__ import annotations
 
 import json
-import subprocess
-from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import minimize
-from scipy.special import comb
-from scipy.stats import binom
+
+# Import model from single source of truth
+from model import Model
 
 # Configuration
 SCRIPT_DIR = Path(".").resolve()
+N_VIALS = 10
 
 matplotlib.rcParams.update({'pdf.fonttype': 42, 'font.family': 'sans-serif', 'font.size': 11})
 COLORS = {'find_uncont': '#4DAF4A', 'find_cont': '#A50F15'}  # Green/red to match empirical figures
-```
 
-## Model Functions
-
-```{python}
-# RSA Model Components
-
-def singleton_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials):
-    """DPValue for singleton decision: pick one vial."""
-    n_remaining = n_vials - m
-    goal_matches = (g == 0 and q == 1) or (g == 1 and q == 0)
-
-    if m == 0:
-        if q == 1:
-            return 0.0 if g == 0 else 1.0
-        else:
-            return 1.0 if g == 0 else 0.0
-
-    if n_remaining == 0:
-        return 1.0 if goal_matches else 0.0
-
-    util_mentioned = 1.0 if goal_matches else 0.0
-    util_remaining = p_uncont if g == 0 else (1 - p_uncont)
-
-    weight_mentioned = m * np.exp(alpha_policy * util_mentioned)
-    weight_remaining = n_remaining * np.exp(alpha_policy * util_remaining)
-    total = weight_mentioned + weight_remaining
-
-    p_pick_mentioned = weight_mentioned / total
-    p_pick_remaining = weight_remaining / total
-
-    return p_pick_mentioned * util_mentioned + p_pick_remaining * util_remaining
-
-
-def f1_score(tp, total_real, total_guess):
-    if total_real == 0 or total_guess == 0:
-        return 0.0
-    precision = tp / total_guess
-    recall = tp / total_real
-    if precision + recall == 0:
-        return 0.0
-    return 2 * precision * recall / (precision + recall)
-
-
-def count_literal_posterior(q, m, w, p_uncont, n_vials):
-    p = p_uncont
-    n_remaining = n_vials - m
-
-    if m == 0:
-        if q == 1:
-            return 1.0 if w == 0 else 0.0
-        else:
-            return 1.0 if w == n_vials else 0.0
-
-    if q == 1:
-        w_remaining = w - m
-        if w_remaining < 0 or w_remaining > n_remaining:
-            return 0.0
-        return comb(n_remaining, w_remaining, exact=True) * \
-               (p ** w_remaining) * ((1 - p) ** (n_remaining - w_remaining))
-    else:
-        if w < 0 or w > n_remaining:
-            return 0.0
-        return comb(n_remaining, w, exact=True) * \
-               (p ** w) * ((1 - p) ** (n_remaining - w))
-
-
-def count_expected_f1(g, q, m, k, p_uncont, n_vials):
-    n_remaining = n_vials - m
-
-    if q == 1:
-        if k < m:
-            return 0.0
-        k_from_remaining = k - m
-    else:
-        if k > n_remaining:
-            return 0.0
-        k_from_remaining = k
-
-    if m == 0:
-        if q == 1:
-            if g == 0:
-                return 0.0
-            else:
-                if k == n_vials:
-                    return 0.0
-                return f1_score(n_vials - k, n_vials, n_vials - k)
-        else:
-            if g == 0:
-                if k == 0:
-                    return 0.0
-                return f1_score(k, n_vials, k)
-            else:
-                return 0.0
-
-    expected_f1 = 0.0
-    for w in range(n_vials + 1):
-        prob_w = count_literal_posterior(q, m, w, p_uncont, n_vials)
-        if prob_w < 1e-15:
-            continue
-
-        if n_remaining == 0:
-            e_tp_remaining = 0.0
-        else:
-            if q == 1:
-                w_remaining = w - m
-            else:
-                w_remaining = w
-            e_tp_remaining = w_remaining * k_from_remaining / n_remaining if n_remaining > 0 else 0.0
-
-        if g == 0:
-            if q == 1:
-                e_tp = m + e_tp_remaining
-            else:
-                e_tp = e_tp_remaining
-
-            if w == 0 or k == 0:
-                f1 = 0.0
-            else:
-                f1 = 2 * e_tp / (w + k)
-        else:
-            n_cont = n_vials - w
-            k_cont = n_vials - k
-
-            if q == 1:
-                w_remaining = w - m
-                cont_remaining = n_remaining - w_remaining
-            else:
-                cont_remaining = n_remaining - w
-
-            guessed_cont_remaining = n_remaining - k_from_remaining
-            if n_remaining == 0:
-                e_tp_cont_remaining = 0.0
-            else:
-                e_tp_cont_remaining = guessed_cont_remaining * cont_remaining / n_remaining
-
-            if q == 0:
-                e_tp_cont = m + e_tp_cont_remaining
-            else:
-                e_tp_cont = e_tp_cont_remaining
-
-            if n_cont == 0 or k_cont == 0:
-                f1 = 0.0
-            else:
-                f1 = 2 * e_tp_cont / (n_cont + k_cont)
-
-        expected_f1 += prob_w * f1
-
-    return expected_f1
-
-
-def setid_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials):
-    """DPValue for set_id decision: classify all vials."""
-    utilities = []
-    for k in range(n_vials + 1):
-        util = count_expected_f1(g, q, m, k, p_uncont, n_vials)
-        utilities.append(util)
-
-    utilities = np.array(utilities)
-    weights = np.exp(alpha_policy * utilities)
-    probs = weights / weights.sum()
-    return np.sum(probs * utilities)
-
-
-def kl_binary(p_l, p_s):
-    if p_s <= 0 or p_s >= 1:
-        return float('inf')
-    kl = 0.0
-    if p_l > 0:
-        kl += p_l * np.log(p_l / p_s)
-    if p_l < 1:
-        kl += (1 - p_l) * np.log((1 - p_l) / (1 - p_s))
-    return kl
-
-
-def r0_distribution(q, n_cont, n_uncont, alpha_r, gamma, length_cost, p_uncont, n_vials):
-    """Compute R0 distribution for given knowledge config."""
-    n_unk = n_vials - n_cont - n_uncont
-    p = p_uncont
-
-    response_weights = np.zeros(n_vials + 1)
-
-    if q == 1:
-        n_match = n_uncont
-        n_other = n_cont
-    else:
-        n_match = n_cont
-        n_other = n_uncont
-
-    for m_match in range(n_match + 1):
-        for m_other in range(n_other + 1):
-            for m_unk in range(n_unk + 1):
-                m = m_match + m_other + m_unk
-                if m > n_vials:
-                    continue
-
-                comb_factor = (comb(n_match, m_match, exact=True) *
-                               comb(n_other, m_other, exact=True) *
-                               comb(n_unk, m_unk, exact=True))
-
-                if m == 0:
-                    kl = (n_match * (-np.log(max(1e-10, 1 - gamma))) +
-                          n_other * (-np.log(max(1e-10, gamma))) +
-                          n_unk * np.log(2))
-                else:
-                    kl = (m_match * (-np.log(max(1e-10, gamma))) +
-                          m_other * (-np.log(max(1e-10, 1 - gamma))) +
-                          m_unk * np.log(2))
-                    kl += (n_match - m_match) * kl_binary(p, gamma)
-                    kl += (n_other - m_other) * kl_binary(p, 1 - gamma)
-                    kl += (n_unk - m_unk) * kl_binary(p, 0.5)
-
-                if np.isfinite(kl):
-                    response_weights[m] += comb_factor * np.exp(alpha_r * (-kl - length_cost * m))
-
-    total = response_weights.sum()
-    if total == 0:
-        return {0: 1.0}
-    return {m: w/total for m, w in enumerate(response_weights) if w/total > 1e-10}
-
-
-def q1_probability(g, decision_type, alpha_r, alpha_q, alpha_policy, gamma, length_cost,
-                   p_uncont, n_vials):
-    """Compute P(WHICH_UNCONT) for given goal and decision type."""
-    configs = [(n_c, n_u) for n_c in range(n_vials+1) for n_u in range(n_vials+1-n_c)]
-
-    expected_value = {0: 0.0, 1: 0.0}
-
-    for q in [0, 1]:
-        total_ev = 0.0
-        for n_c, n_u in configs:
-            r0 = r0_distribution(q, n_c, n_u, alpha_r, gamma, length_cost, p_uncont, n_vials)
-            ev_this = 0.0
-            for m, prob_m in r0.items():
-                if decision_type == 'singleton':
-                    dpv = singleton_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials)
-                else:
-                    dpv = setid_dpvalue(g, q, m, alpha_policy, p_uncont, n_vials)
-                ev_this += prob_m * dpv
-            total_ev += ev_this / len(configs)
-        expected_value[q] = total_ev
-
-    exp_vals = np.array([np.exp(alpha_q * expected_value[q]) for q in [0, 1]])
-    probs = exp_vals / exp_vals.sum()
-    return probs[1]  # P(WHICH_UNCONT)
-```
-
-## Qualitative Model Predictions
-
-```{python}
-N_VIALS = 10
-
-# Joint parameters fit to both experiments (with tied alpha_R = alpha_Q)
-PARAMS = {
-    'alpha_r': 3.0,
-    'alpha_q': 3.0,
-    'alpha_policy': 3.0,
-    'gamma': 0.75,
-    'length_cost': 0.01
-}
-
-# Aliases for backward compatibility
-EXP1_PARAMS = PARAMS
-EXP2_PARAMS = PARAMS
+# Create model with fitted hyperparameters
+model = Model(alpha_r=3.0, alpha_q=3.0, alpha_policy=3.0, gamma=0.75, length_cost=0.01)
 ```
 
 ### Experiment 1: Goal × Base Rate
@@ -312,11 +50,10 @@ pred_cont = []
 print("Computing Exp 1 predictions...")
 for br in base_rates:
     p_uncont = 1 - br
-    p_find_uncont = q1_probability(0, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
-    p_find_cont = q1_probability(1, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
-    pred_uncont.append(p_find_uncont)
-    pred_cont.append(p_find_cont)
-    print(f"  BR={br}: find_uncont={p_find_uncont:.2f}, find_cont={p_find_cont:.2f}")
+    preds = model.predict_all('singleton', p_uncont=p_uncont, n_vials=N_VIALS)
+    pred_uncont.append(preds['find_uncont'])
+    pred_cont.append(preds['find_cont'])
+    print(f"  BR={br}: find_uncont={preds['find_uncont']:.2f}, find_cont={preds['find_cont']:.2f}")
 
 fig, ax = plt.subplots(figsize=(5, 4))
 
@@ -345,14 +82,13 @@ plt.show()
 #| fig-cap: "Model predictions for Experiment 2: Goal alignment depends on decision structure"
 
 # Compute predictions at 50% base rate for both decision types
-p_uncont = 0.5
 predictions = {}
 
 for dt in ['singleton', 'set_id']:
-    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
-        p = q1_probability(g, dt, **EXP2_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
-        predictions[(dt, g_name)] = p
-        print(f"{dt}, {g_name}: {p:.2%}")
+    preds = model.predict_all(dt, p_uncont=0.5, n_vials=N_VIALS)
+    for g_name in ['find_uncont', 'find_cont']:
+        predictions[(dt, g_name)] = preds[g_name]
+        print(f"{dt}, {g_name}: {preds[g_name]:.2%}")
 
 # Bar plot matching empirical figure style (grouped by decision structure)
 fig, ax = plt.subplots(figsize=(5, 4))
@@ -394,17 +130,15 @@ print(f"Interaction: {singleton_effect - setid_effect:.0%}")
 #| label: fig-combined-predictions
 #| fig-cap: "Combined model predictions for both experiments"
 
-# Recompute Exp 1 predictions with EXP1_PARAMS
+# Recompute Exp 1 predictions
 base_rates = np.array([0.2, 0.5, 0.8])
 exp1_pred_uncont = []
 exp1_pred_cont = []
 
 for br in base_rates:
-    p_uncont = 1 - br
-    p_find_uncont = q1_probability(0, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
-    p_find_cont = q1_probability(1, 'singleton', **EXP1_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
-    exp1_pred_uncont.append(p_find_uncont)
-    exp1_pred_cont.append(p_find_cont)
+    preds = model.predict_all('singleton', p_uncont=1-br, n_vials=N_VIALS)
+    exp1_pred_uncont.append(preds['find_uncont'])
+    exp1_pred_cont.append(preds['find_cont'])
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
 
@@ -487,12 +221,11 @@ cont_t = sum(EXP1_DATA[k][1] for k in EXP1_DATA if k[0] == 'cont')
 gm_pred = {k: (uncont_s/uncont_t if k[0] == 'uncont' else cont_s/cont_t) for k in EXP1_DATA}
 gm_waic, gm_brier = compute_waic_brier(gm_pred, EXP1_DATA)
 
-# Full RSA model (use fitted Exp 2 params)
+# Full RSA model
 rsa_pred = {}
 for (goal, br) in EXP1_DATA:
-    g = 0 if goal == 'uncont' else 1
-    p_uncont = 1 - br
-    rsa_pred[(goal, br)] = q1_probability(g, 'singleton', **EXP2_PARAMS, p_uncont=p_uncont, n_vials=N_VIALS)
+    g_name = 'find_uncont' if goal == 'uncont' else 'find_cont'
+    rsa_pred[(goal, br)] = model.predict(g_name, 'singleton', p_uncont=1-br, n_vials=N_VIALS)
 rsa_waic, rsa_brier = compute_waic_brier(rsa_pred, EXP1_DATA)
 
 import pandas as pd
@@ -575,30 +308,20 @@ gm2_pred = {
 gm2_waic, gm2_brier = exp2_waic_brier(gm2_pred)
 
 # Exhaustive-only RSA (use set_id utility for both - assumes exhaustive answers)
-exh_pred = {}
-for dt in ['singleton', 'set_id']:
-    exh_pred[dt] = {}
-    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
-        p = q1_probability(g, 'set_id', **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
-        exh_pred[dt][g_name] = p
+exh_preds = model.predict_all('set_id', p_uncont=0.5, n_vials=N_VIALS)
+exh_pred = {dt: exh_preds for dt in ['singleton', 'set_id']}
 exh_waic, exh_brier = exp2_waic_brier(exh_pred)
 
 # Mention-some only RSA (use singleton utility for both - assumes partial answers)
-ms_pred = {}
-for dt in ['singleton', 'set_id']:
-    ms_pred[dt] = {}
-    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
-        p = q1_probability(g, 'singleton', **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
-        ms_pred[dt][g_name] = p
+ms_preds = model.predict_all('singleton', p_uncont=0.5, n_vials=N_VIALS)
+ms_pred = {dt: ms_preds for dt in ['singleton', 'set_id']}
 ms_waic, ms_brier = exp2_waic_brier(ms_pred)
 
-# Full RSA model
-rsa2_pred = {}
-for dt in ['singleton', 'set_id']:
-    rsa2_pred[dt] = {}
-    for g, g_name in [(0, 'find_uncont'), (1, 'find_cont')]:
-        p = q1_probability(g, dt, **EXP2_PARAMS, p_uncont=0.5, n_vials=N_VIALS)
-        rsa2_pred[dt][g_name] = p
+# Full RSA model (different utility for each decision type)
+rsa2_pred = {
+    'singleton': model.predict_all('singleton', p_uncont=0.5, n_vials=N_VIALS),
+    'set_id': model.predict_all('set_id', p_uncont=0.5, n_vials=N_VIALS)
+}
 rsa2_waic, rsa2_brier = exp2_waic_brier(rsa2_pred)
 
 # Build model comparison dataframe for Exp 2
