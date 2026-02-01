@@ -1,0 +1,312 @@
+---
+title: "CogSci Wh-Question Analysis"
+author: "LEE, Seo-young"
+date: "2026-01-18"
+format: html
+---
+
+```{r setup}
+#| include: false
+library(tidyverse)
+library(tidyboot)
+library(ggthemes)
+
+# Path for saving figures
+fig_path <- "../latex/figures/"
+dir.create(fig_path, showWarnings = FALSE, recursive = TRUE)
+```
+
+# Experiment 1: Free Completion Task
+
+## Data Processing
+
+```{r exp1-load}
+dat_exp1_raw <-
+  list.files(path = "./experiment1_data/",
+             pattern = "\\.csv$",
+             full.names = TRUE) |>
+  map_df(\(x) read_csv(x, col_types = cols(.default = "c"))) |>
+  filter(trial_type == "survey-html-form" | trial_type == "survey-text") |>
+  filter(!prolific_pid %in% c("66463ba8fac8591a6734db5b")) |>
+  pivot_wider(names_from = trial_type, values_from = response)
+
+# Clean up pivot (strategy responses are on alternating rows)
+for (i in seq(1, nrow(dat_exp1_raw), by = 2)) {
+  dat_exp1_raw$`survey-text`[i] <- dat_exp1_raw$`survey-text`[i + 1]
+}
+
+dat_exp1 <-
+  dat_exp1_raw |>
+  filter(!is.na(base_rate)) |>
+  select(prolific_pid, goal_condition, base_rate, raw_response,
+         trial_id, decision_structure, `survey-text`) |>
+  mutate(
+    base_rate = factor(base_rate),
+    goal_condition = factor(goal_condition, levels = c("uncont", "cont")),
+    prolific_pid = factor(prolific_pid)
+  ) |>
+  rename(strategy = `survey-text`)
+```
+
+## Response Coding
+
+Responses are automatically coded as contaminated-synonymous or uncontaminated-synonymous based on keyword matching.
+
+```{r exp1-coding}
+dat_exp1 <- dat_exp1 |>
+  mutate(response_lowercase = tolower(raw_response)) |>
+  mutate(
+    # Contaminated-synonymous responses
+    chose_which_contaminated =
+      (grepl("contaminated", response_lowercase, fixed = TRUE)
+       & !grepl("not contaminated", response_lowercase, fixed = TRUE)
+       & !grepl("uncontaminated", response_lowercase, fixed = TRUE)
+       & !grepl("were they contaminated", response_lowercase, fixed = TRUE))
+      | (grepl("contaminant", response_lowercase, fixed = TRUE)
+         & !grepl("not contaminant", response_lowercase, fixed = TRUE)
+         & !grepl("uncontaminant", response_lowercase, fixed = TRUE))
+      | (grepl("contamine", response_lowercase, fixed = TRUE)
+         & !grepl("not contamine", response_lowercase, fixed = TRUE)
+         & !grepl("uncontamine", response_lowercase, fixed = TRUE))
+      | (grepl("poison", response_lowercase, fixed = TRUE)
+         & !grepl("not poison", response_lowercase, fixed = TRUE))
+      | (grepl("dirty", response_lowercase, fixed = TRUE)
+         & !grepl("not dirty", response_lowercase, fixed = TRUE))
+      | (grepl("dangerous", response_lowercase, fixed = TRUE)
+         & !grepl("not dangerous", response_lowercase, fixed = TRUE))
+      | grepl("unsafe", response_lowercase, fixed = TRUE)
+      | grepl("unclean", response_lowercase, fixed = TRUE)
+      | grepl("not safe", response_lowercase, fixed = TRUE)
+      | grepl("not clean", response_lowercase, fixed = TRUE)
+      | grepl("not pure", response_lowercase, fixed = TRUE)
+      | grepl("impure", response_lowercase, fixed = TRUE),
+
+    # Uncontaminated-synonymous responses
+    chose_which_uncontaminated =
+      grepl("uncontaminated", response_lowercase, fixed = TRUE)
+      | grepl("not contaminated", response_lowercase, fixed = TRUE)
+      | grepl("uncontaminant", response_lowercase, fixed = TRUE)
+      | grepl("not contaminant", response_lowercase, fixed = TRUE)
+      | grepl("uncontiminated", response_lowercase, fixed = TRUE)
+      | grepl("not contminated", response_lowercase, fixed = TRUE)
+      | grepl("not poison", response_lowercase, fixed = TRUE)
+      | grepl("not dirty", response_lowercase, fixed = TRUE)
+      | grepl("not dangerous", response_lowercase, fixed = TRUE)
+      | (grepl("safe", response_lowercase, fixed = TRUE)
+         & !grepl("unsafe", response_lowercase, fixed = TRUE)
+         & !grepl("not safe", response_lowercase, fixed = TRUE))
+      | (grepl("clean", response_lowercase, fixed = TRUE)
+         & !grepl("not clean", response_lowercase, fixed = TRUE)
+         & !grepl("unclean", response_lowercase, fixed = TRUE))
+      | (grepl("pure", response_lowercase, fixed = TRUE)
+         & !grepl("not pure", response_lowercase, fixed = TRUE)
+         & !grepl("impure", response_lowercase, fixed = TRUE))
+  )
+
+# Separate coded vs. needing manual review
+dat_exp1_toCode <- dat_exp1 |>
+  filter(chose_which_contaminated == chose_which_uncontaminated)
+
+dat_exp1_coded <- dat_exp1 |>
+  filter(chose_which_contaminated != chose_which_uncontaminated)
+
+# Summary
+cat("Total participants:", nrow(dat_exp1), "\n")
+cat("Successfully coded:", nrow(dat_exp1_coded), "\n")
+cat("Need manual coding:", nrow(dat_exp1_toCode), "\n")
+```
+
+```{r exp1-tocode}
+# Show responses needing manual coding
+if (nrow(dat_exp1_toCode) > 0) {
+  dat_exp1_toCode |>
+    select(goal_condition, base_rate, raw_response) |>
+    knitr::kable(caption = "Responses requiring manual coding")
+}
+```
+
+## Results
+
+### Descriptive Statistics
+
+```{r exp1-descriptives}
+# Cell counts
+table(dat_exp1_coded$goal_condition, dat_exp1_coded$base_rate)
+
+# Group means with bootstrapped CIs
+dat_exp1_summary <- dat_exp1_coded |>
+  group_by(base_rate, goal_condition) |>
+  tidyboot_mean(chose_which_uncontaminated, na.rm = TRUE) |>
+  mutate(base_rate_num = as.numeric(as.character(base_rate)))
+
+dat_exp1_summary |>
+  knitr::kable(digits = 3, caption = "Experiment 1: Proportion asking 'Which are uncontaminated?'")
+```
+
+### Visualization
+
+```{r exp1-plot}
+#| fig-width: 5
+#| fig-height: 4
+
+exp1_plot <- ggplot(dat_exp1_summary,
+       aes(x = base_rate_num, y = mean,
+           color = goal_condition, group = goal_condition)) +
+  geom_point(size = 3, position = position_dodge(0.02)) +
+  geom_line(linewidth = 1, position = position_dodge(0.02)) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0, position = position_dodge(0.02)) +
+  scale_x_continuous(breaks = c(0.2, 0.5, 0.8), labels = c("20%", "50%", "80%")) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25)) +
+  scale_color_manual(
+    values = c("uncont" = "#4DAF4A", "cont" = "#A50F15"),
+    labels = c("uncont" = "Find uncontaminated", "cont" = "Find contaminated")
+  ) +
+  labs(
+    x = "Base rate of contamination",
+    y = "P('Which are uncontaminated?')",
+    color = "Goal"
+  ) +
+  theme_few(base_size = 12) +
+  theme(legend.position = "bottom", aspect.ratio = 1)
+
+exp1_plot
+
+ggsave(paste0(fig_path, "exp1_results.pdf"), exp1_plot, width = 5, height = 4)
+```
+
+### Logistic Regression
+
+```{r exp1-regression}
+dat_exp1_coded <- dat_exp1_coded |>
+  mutate(base_rate_num = as.numeric(as.character(base_rate)),
+         base_rate_c = base_rate_num - 0.5)  # center at 50%
+
+mod_exp1 <- glm(
+  chose_which_uncontaminated ~ goal_condition * base_rate_c,
+  data = dat_exp1_coded,
+  family = "binomial",
+  contrasts = list(goal_condition = "contr.sum")
+)
+
+summary(mod_exp1)
+```
+
+**Key findings:**
+
+- Significant main effect of goal (β = 0.83, z = 4.31, p < .001)
+- Significant effect of base rate (β = 1.69, z = 2.16, p = .031): higher contamination rates increase preference for asking about uncontaminated vials
+- No significant interaction (p = .97)
+
+---
+
+# Experiment 2: Forced Choice Task
+
+## Data Processing
+
+```{r exp2-load}
+dat_exp2_raw <-
+  list.files(path = "./experiment2_data/",
+             pattern = "\\.csv$",
+             full.names = TRUE) |>
+  map_df(\(x) read_csv(x, col_types = cols(.default = "c"))) |>
+  filter(!is.na(trial_id) | trial_type == "survey-text") |>
+  filter(!prolific_pid %in% c("651090beae417ded35c4ef2f")) |>
+  pivot_wider(names_from = trial_type, values_from = response)
+
+# Clean up pivot
+for (i in seq(1, nrow(dat_exp2_raw), by = 2)) {
+  dat_exp2_raw$`survey-text`[i] <- dat_exp2_raw$`survey-text`[i + 1]
+}
+
+dat_exp2 <- dat_exp2_raw |>
+  filter(!is.na(chosen_question)) |>
+  select(prolific_pid, goal_condition, decision_structure,
+         chosen_question, chose_which_contaminated, chose_which_uncontaminated,
+         base_rate, trial_id, `survey-text`) |>
+  mutate(
+    goal_condition = factor(goal_condition, levels = c("uncont", "cont")),
+    decision_structure = factor(decision_structure, levels = c("singleton", "set_id")),
+    prolific_pid = factor(prolific_pid),
+    chose_which_contaminated = chose_which_contaminated == "true",
+    chose_which_uncontaminated = chose_which_uncontaminated == "true"
+  ) |>
+  rename(strategy = `survey-text`)
+
+cat("Total participants:", nrow(dat_exp2), "\n")
+```
+
+## Results
+
+### Descriptive Statistics
+
+```{r exp2-descriptives}
+# Cell counts
+table(dat_exp2$goal_condition, dat_exp2$decision_structure)
+
+# Group means with bootstrapped CIs
+dat_exp2_summary <- dat_exp2 |>
+  group_by(decision_structure, goal_condition) |>
+  tidyboot_mean(chose_which_uncontaminated, na.rm = TRUE)
+
+dat_exp2_summary |>
+  knitr::kable(digits = 3, caption = "Experiment 2: Proportion choosing 'Which are not contaminated?'")
+```
+
+### Visualization
+
+```{r exp2-plot}
+#| fig-width: 5
+#| fig-height: 4
+
+exp2_plot <- ggplot(dat_exp2_summary,
+       aes(x = decision_structure, y = mean, fill = goal_condition)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9)) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),
+                width = 0, position = position_dodge(0.9)) +
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25)) +
+  scale_fill_manual(
+    values = c("uncont" = "#4DAF4A", "cont" = "#A50F15"),
+    labels = c("uncont" = "Find uncontaminated", "cont" = "Find contaminated")
+  ) +
+  scale_x_discrete(labels = c("singleton" = "Singleton", "set_id" = "Set ID")) +
+  labs(
+    x = "Decision structure",
+    y = "P('Which are not contaminated?')",
+    fill = "Goal"
+  ) +
+  theme_few(base_size = 12) +
+  theme(legend.position = "bottom", aspect.ratio = 1)
+
+exp2_plot
+
+ggsave(paste0(fig_path, "exp2_results.pdf"), exp2_plot, width = 5, height = 4)
+```
+
+### Logistic Regression
+
+```{r exp2-regression}
+mod_exp2 <- glm(
+  chose_which_uncontaminated ~ goal_condition * decision_structure,
+  data = dat_exp2,
+  family = "binomial",
+  contrasts = list(goal_condition = "contr.sum", decision_structure = "contr.sum")
+)
+
+summary(mod_exp2)
+```
+
+**Key findings:**
+
+- Significant main effect of goal (β = 0.88, z = 4.96, p < .001)
+- No significant main effect of decision structure
+- Significant interaction (β = -0.35, z = -1.98, p = .048): goal alignment is stronger in singleton selection than in set identification
+
+---
+
+# Export Processed Data
+
+```{r export}
+write_csv(dat_exp1_coded, "exp1_coded.csv")
+write_csv(dat_exp1_toCode, "exp1_toCode.csv")
+write_csv(dat_exp2, "exp2_processed.csv")
+```
