@@ -1,23 +1,16 @@
-# Wh-Question Polarity
+# Lee & Hawkins (submitted)
 
-Code and data for reproducing the analyses in *A Utility-Based Account of the Choice of Constituent Question Polarity*.
+Code and data for reproducing the analyses in Lee & Hawkins (submitted) *A Utility-Based Account of the Choice of Constituent Question Polarity*.
 
 ## Reproducing Results
 
-- **Model simulations**: `model/simulations.qmd`
-- **Empirical analyses**: `analysis/cogsci_whQ_analysis.qmd`
-- **Empirical data**: `data/`
+- Model simulations are in  `model/simulations.qmd`
+- Empirical analyses are in `analysis/cogsci_whQ_analysis.qmd`
 
 ## Model
 
-The computational model is in `model/`. Install dependencies with:
+Install dependencies for computational model with
 
 ```bash
 pip install -r model/requirements.txt
-```
-
-Run the test suite:
-
-```bash
-cd model && python test_model.py
 ```
