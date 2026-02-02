@@ -285,20 +285,104 @@ def test_set_id_symmetry():
         return False
 
 
+def test_high_gamma_edge_cases():
+    """Test model at very high gamma values (edge case that revealed filter bug)."""
+    print("Testing high gamma edge cases:")
+    results = []
+
+    for gamma in [0.95, 0.99]:
+        print(f"  gamma={gamma}...", end=" ")
+        try:
+            result = run_model(5, 0.5, gamma)
+
+            # Should still show goal effect and be valid
+            valid = (
+                'find_uncontam' in result and
+                result['find_uncontam']['p_which_uncont'] > 0.5 and
+                result['find_uncontam']['p_which_uncont'] <= 1.0
+            )
+
+            if valid:
+                print(f"PASS (p_which_uncont={result['find_uncontam']['p_which_uncont']*100:.1f}%)")
+                results.append(True)
+            else:
+                print(f"FAIL")
+                results.append(False)
+        except Exception as e:
+            print(f"FAIL ({e})")
+            results.append(False)
+
+    return all(results)
+
+
+def test_bitmask_vs_count_model():
+    """
+    Verify count-based O(N²) model matches exact O(2^N) bitmask enumeration.
+
+    This is the critical correctness test. The count model should be mathematically
+    exact due to exchangeability - all vials are statistically identical given only
+    their count, so we can represent worlds by counts rather than bitmasks.
+    """
+    print("Testing count model vs bitmask model:")
+    import subprocess
+    import json
+
+    results = []
+
+    # Test at various configurations including edge cases
+    test_configs = [
+        (5, 0.5, 0.9, 'singleton'),
+        (5, 0.5, 0.99, 'singleton'),  # High gamma (where filter bug was found)
+        (5, 0.2, 0.9, 'singleton'),
+        (5, 0.8, 0.9, 'singleton'),
+        (5, 0.5, 0.9, 'set_id'),
+    ]
+
+    for n, rate, gamma, dtype in test_configs:
+        print(f"  N={n}, rate={rate}, γ={gamma}, {dtype}...", end=" ")
+        try:
+            # Run bitmask model
+            cmd = ['python', 'wh-questions-bitmask.py', '-n', str(n), '-r', str(rate),
+                   '-g', str(gamma), '-d', dtype]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if result.returncode != 0:
+                print(f"FAIL (bitmask script error: {result.stderr})")
+                results.append(False)
+                continue
+            bitmask = json.loads(result.stdout)
+
+            # Run count model
+            count_result = run_model(n, rate, gamma, decision_type=dtype)
+
+            # Compare
+            bitmask_val = bitmask['find_uncontam']['p_which_uncont']
+            count_val = count_result['find_uncontam']['p_which_uncont']
+            diff = abs(bitmask_val - count_val) * 100
+
+            if diff <= 0.1:  # 0.1 percentage point tolerance (numerical precision)
+                print(f"PASS (diff={diff:.3f} pts)")
+                results.append(True)
+            else:
+                print(f"FAIL (bitmask={bitmask_val*100:.2f}%, count={count_val*100:.2f}%, diff={diff:.2f} pts)")
+                results.append(False)
+        except Exception as e:
+            print(f"FAIL ({e})")
+            results.append(False)
+
+    return all(results)
+
+
 def test_regression_pinned_values():
     """
     Regression test: pin known-good outputs to catch unintended model changes.
 
-    Note: The count-based model uses hypergeometric weighting (E[F1] over possible
-    overlaps) which differs from exact bitmask enumeration. These are pinned values
-    from the current count-based model, not the bitmask model.
+    The count-based model is mathematically exact (not an approximation) due to
+    exchangeability. These pinned values have been verified against the bitmask model.
     """
     print("Testing regression against pinned values:")
     results = []
 
-    # Pinned values for count-based model (update intentionally if model changes)
-    # Note: At p=0.5, count model matches bitmask exactly. At asymmetric rates,
-    # there's ~0.6pp approximation error due to exchangeability assumption.
+    # Pinned values verified against bitmask model
     test_cases = [
         # (n, rate, gamma, decision_type, expected_find_uncont_p_which_uncont)
         (5, 0.5, 0.9, 'singleton', 0.808),
@@ -344,8 +428,13 @@ def main():
     print()
     results.append(("Extreme base rates", test_extreme_base_rates()))
 
-    # Note: symmetry tests removed - this model uses p_uncont directly for listener
-    # prior in KL computation, so find_uncont@p != find_cont@(1-p)
+    print()
+    results.append(("High gamma edge cases", test_high_gamma_edge_cases()))
+
+    print()
+    print("Symmetry tests:")
+    results.append(("Symmetry (singleton)", test_symmetry()))
+    results.append(("Symmetry (set_id)", test_set_id_symmetry()))
 
     print()
     print("Qualitative behavior tests (SINGLETON):")
@@ -361,6 +450,10 @@ def main():
     print()
     print("Regression tests:")
     results.append(("Pinned values", test_regression_pinned_values()))
+
+    print()
+    print("Bitmask verification (count model == exact enumeration):")
+    results.append(("Bitmask vs count model", test_bitmask_vs_count_model()))
 
     print()
     print("=" * 60)
