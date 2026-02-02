@@ -22,18 +22,29 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Import model from single source of truth
+# Import model and fitting utilities
 from model import Model
+from fit import fit_all_models, EXP1_DATA, EXP2_DATA, N_VIALS, LENGTH_COST
 
 # Configuration
 SCRIPT_DIR = Path(".").resolve()
-N_VIALS = 10
 
 matplotlib.rcParams.update({'pdf.fonttype': 42, 'font.family': 'sans-serif', 'font.size': 11})
 COLORS = {'find_uncont': '#4DAF4A', 'find_cont': '#A50F15'}  # Green/red to match empirical figures
 
+# Fit all models (this runs optimization for RSA models)
+print("Fitting all models...")
+results = fit_all_models()
+print("Done!")
+
+# Get fitted parameters for Full RSA (Exp 2)
+fitted_alpha = results['exp2']['full_rsa']['alpha']
+fitted_gamma = results['exp2']['full_rsa']['gamma']
+print(f"Fitted parameters: α={fitted_alpha:.1f}, γ={fitted_gamma:.2f}")
+
 # Create model with fitted hyperparameters
-model = Model(alpha_r=3.0, alpha_q=3.0, alpha_policy=3.0, gamma=0.75, length_cost=0.01)
+model = Model(alpha_r=fitted_alpha, alpha_q=fitted_alpha, alpha_policy=fitted_alpha,
+              gamma=fitted_gamma, length_cost=LENGTH_COST)
 ```
 
 ### Experiment 1: Goal × Base Rate
@@ -181,228 +192,141 @@ plt.show()
 ## Model Comparison: Experiment 1
 
 ```{python}
-# Experiment 1 data
-EXP1_DATA = {
-    ('uncont', 0.2): (10, 23),
-    ('uncont', 0.5): (17, 36),
-    ('uncont', 0.8): (21, 31),
-    ('cont', 0.2): (4, 28),
-    ('cont', 0.5): (2, 21),
-    ('cont', 0.8): (7, 24),
-}
-
-def compute_waic_brier(predictions, data):
-    """Compute WAIC and Brier score over individual observations."""
-    total_ll = 0.0
-    total_brier = 0.0
-    total_n = 0
-
-    for key, (successes, total) in data.items():
-        pred_p = np.clip(predictions[key], 1e-10, 1 - 1e-10)
-        total_ll += successes * np.log(pred_p) + (total - successes) * np.log(1 - pred_p)
-        total_brier += successes * (1 - pred_p)**2 + (total - successes) * pred_p**2
-        total_n += total
-
-    waic = -2 * total_ll
-    brier = total_brier / total_n
-    return waic, brier
-
-
-# Null model
-null_pred = {key: 0.5 for key in EXP1_DATA}
-null_waic, null_brier = compute_waic_brier(null_pred, EXP1_DATA)
-
-# Goal-matching model (MLE)
-uncont_s = sum(EXP1_DATA[k][0] for k in EXP1_DATA if k[0] == 'uncont')
-uncont_t = sum(EXP1_DATA[k][1] for k in EXP1_DATA if k[0] == 'uncont')
-cont_s = sum(EXP1_DATA[k][0] for k in EXP1_DATA if k[0] == 'cont')
-cont_t = sum(EXP1_DATA[k][1] for k in EXP1_DATA if k[0] == 'cont')
-
-gm_pred = {k: (uncont_s/uncont_t if k[0] == 'uncont' else cont_s/cont_t) for k in EXP1_DATA}
-gm_waic, gm_brier = compute_waic_brier(gm_pred, EXP1_DATA)
-
-# Full RSA model
-rsa_pred = {}
-for (goal, br) in EXP1_DATA:
-    g_name = 'find_uncont' if goal == 'uncont' else 'find_cont'
-    rsa_pred[(goal, br)] = model.predict(g_name, 'singleton', p_uncont=1-br, n_vials=N_VIALS)
-rsa_waic, rsa_brier = compute_waic_brier(rsa_pred, EXP1_DATA)
-
 import pandas as pd
 from IPython.display import Markdown
 
-# Build model comparison dataframe
+# Use pre-fitted results from fit.py
+exp1 = results['exp1']
+
+# Build model comparison dataframe (Null vs RSA only for Exp 1)
 exp1_models = pd.DataFrame({
-    'Model': ['Null', 'Goal-matching', 'Full RSA'],
-    'k': [0, 2, 5],
-    'WAIC': [null_waic, gm_waic, rsa_waic],
-    'Brier': [null_brier, gm_brier, rsa_brier]
+    'Model': ['Null', 'Full RSA'],
+    'k': [0, 2],
+    'LL': [-exp1['null']['nll'], -exp1['rsa']['nll']],
+    'AIC': [exp1['null']['aic'], exp1['rsa']['aic']],
 })
 
-# Find best (lowest) WAIC
-best_waic_idx = exp1_models['WAIC'].idxmin()
+# Find best (lowest) AIC
+best_aic_idx = exp1_models['AIC'].idxmin()
 
 # Format with bold for best
-def format_exp1_row(row, idx):
-    if idx == best_waic_idx:
-        return f"| **{row['Model']}** | {row['k']} | **{row['WAIC']:.1f}** | **{row['Brier']:.3f}** |"
-    return f"| {row['Model']} | {row['k']} | {row['WAIC']:.1f} | {row['Brier']:.3f} |"
+def format_row(row, idx, best_idx):
+    if idx == best_idx:
+        return f"| **{row['Model']}** | {row['k']} | {row['LL']:.1f} | **{row['AIC']:.1f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['LL']:.1f} | {row['AIC']:.1f} |"
 
-table_md = "| Model | k | WAIC | Brier |\n|:------|--:|-----:|------:|\n"
+table_md = "| Model | k | LL | AIC |\n|:------|--:|---:|----:|\n"
 for idx, row in exp1_models.iterrows():
-    table_md += format_exp1_row(row, idx) + "\n"
+    table_md += format_row(row, idx, best_aic_idx) + "\n"
 
-display(Markdown(f"**Experiment 1 Model Comparison**\n\n{table_md}"))
+# Show fitted parameters
+rsa_params = f"RSA fitted parameters: α={exp1['rsa']['alpha']:.1f}, γ={exp1['rsa']['gamma']:.2f}"
+display(Markdown(f"**Experiment 1 Model Comparison**\n\n{table_md}\n\n{rsa_params}"))
 ```
 
 ## Model Comparison: Experiment 2
 
 ```{python}
-# Experiment 2 data
-EXP2_DATA = {
-    'singleton': {
-        'find_uncont': (29, 38),
-        'find_cont': (9, 42)
-    },
-    'set_id': {
-        'find_uncont': (24, 36),
-        'find_cont': (18, 44)
-    }
-}
+# Use pre-fitted results from fit.py
+exp2 = results['exp2']
 
-def exp2_waic_brier(predictions):
-    """Compute WAIC and Brier for Exp 2 format."""
-    total_ll = 0.0
-    total_brier = 0.0
-    total_n = 0
-
-    for dt in ['singleton', 'set_id']:
-        for goal in ['find_uncont', 'find_cont']:
-            s, t = EXP2_DATA[dt][goal]
-            pred_p = np.clip(predictions[dt][goal], 1e-10, 1 - 1e-10)
-            total_ll += s * np.log(pred_p) + (t - s) * np.log(1 - pred_p)
-            total_brier += s * (1 - pred_p)**2 + (t - s) * pred_p**2
-            total_n += t
-
-    return -2 * total_ll, total_brier / total_n
-
-
-# Null model
-null2_pred = {'singleton': {'find_uncont': 0.5, 'find_cont': 0.5},
-              'set_id': {'find_uncont': 0.5, 'find_cont': 0.5}}
-null2_waic, null2_brier = exp2_waic_brier(null2_pred)
-
-# Goal-matching model (same effect for both decision types)
-all_uncont_s = EXP2_DATA['singleton']['find_uncont'][0] + EXP2_DATA['set_id']['find_uncont'][0]
-all_uncont_t = EXP2_DATA['singleton']['find_uncont'][1] + EXP2_DATA['set_id']['find_uncont'][1]
-all_cont_s = EXP2_DATA['singleton']['find_cont'][0] + EXP2_DATA['set_id']['find_cont'][0]
-all_cont_t = EXP2_DATA['singleton']['find_cont'][1] + EXP2_DATA['set_id']['find_cont'][1]
-
-p_uncont_goal = all_uncont_s / all_uncont_t
-p_cont_goal = all_cont_s / all_cont_t
-
-gm2_pred = {
-    'singleton': {'find_uncont': p_uncont_goal, 'find_cont': p_cont_goal},
-    'set_id': {'find_uncont': p_uncont_goal, 'find_cont': p_cont_goal}
-}
-gm2_waic, gm2_brier = exp2_waic_brier(gm2_pred)
-
-# Exhaustive-only RSA (use set_id utility for both - assumes exhaustive answers)
-exh_preds = model.predict_all('set_id', p_uncont=0.5, n_vials=N_VIALS)
-exh_pred = {dt: exh_preds for dt in ['singleton', 'set_id']}
-exh_waic, exh_brier = exp2_waic_brier(exh_pred)
-
-# Mention-some only RSA (use singleton utility for both - assumes partial answers)
-ms_preds = model.predict_all('singleton', p_uncont=0.5, n_vials=N_VIALS)
-ms_pred = {dt: ms_preds for dt in ['singleton', 'set_id']}
-ms_waic, ms_brier = exp2_waic_brier(ms_pred)
-
-# Full RSA model (different utility for each decision type)
-rsa2_pred = {
-    'singleton': model.predict_all('singleton', p_uncont=0.5, n_vials=N_VIALS),
-    'set_id': model.predict_all('set_id', p_uncont=0.5, n_vials=N_VIALS)
-}
-rsa2_waic, rsa2_brier = exp2_waic_brier(rsa2_pred)
-
-# Build model comparison dataframe for Exp 2
+# Build model comparison dataframe (each model fit separately)
 exp2_models = pd.DataFrame({
     'Model': ['Null', 'Goal-matching', 'Exhaustive-only RSA', 'Mention-some only RSA', 'Full RSA'],
-    'k': [0, 2, 5, 5, 5],
-    'WAIC': [null2_waic, gm2_waic, exh_waic, ms_waic, rsa2_waic],
-    'Brier': [null2_brier, gm2_brier, exh_brier, ms_brier, rsa2_brier]
+    'k': [0, 2, 2, 2, 2],
+    'LL': [-exp2['null']['nll'], -exp2['goal_matching']['nll'],
+           -exp2['exhaustive_only']['nll'], -exp2['mention_some_only']['nll'],
+           -exp2['full_rsa']['nll']],
+    'AIC': [exp2['null']['aic'], exp2['goal_matching']['aic'],
+            exp2['exhaustive_only']['aic'], exp2['mention_some_only']['aic'],
+            exp2['full_rsa']['aic']],
 })
 
-# Find best (lowest) WAIC
-best_waic_idx2 = exp2_models['WAIC'].idxmin()
+# Find best (lowest) AIC
+best_aic_idx2 = exp2_models['AIC'].idxmin()
 
 # Format with bold for best
 def format_exp2_row(row, idx):
-    if idx == best_waic_idx2:
-        return f"| **{row['Model']}** | {row['k']} | **{row['WAIC']:.1f}** | **{row['Brier']:.3f}** |"
-    return f"| {row['Model']} | {row['k']} | {row['WAIC']:.1f} | {row['Brier']:.3f} |"
+    if idx == best_aic_idx2:
+        return f"| **{row['Model']}** | {row['k']} | {row['LL']:.1f} | **{row['AIC']:.1f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['LL']:.1f} | {row['AIC']:.1f} |"
 
-table_md2 = "| Model | k | WAIC | Brier |\n|:------|--:|-----:|------:|\n"
+table_md2 = "| Model | k | LL | AIC |\n|:------|--:|---:|----:|\n"
 for idx, row in exp2_models.iterrows():
     table_md2 += format_exp2_row(row, idx) + "\n"
 
-display(Markdown(f"**Experiment 2 Model Comparison**\n\n{table_md2}"))
+# Show fitted parameters for each RSA model
+param_info = f"""
+**Fitted parameters (each model fit separately):**
+- Exhaustive-only RSA: α={exp2['exhaustive_only']['alpha']:.1f}, γ={exp2['exhaustive_only']['gamma']:.2f}
+- Mention-some only RSA: α={exp2['mention_some_only']['alpha']:.1f}, γ={exp2['mention_some_only']['gamma']:.2f}
+- Full RSA: α={exp2['full_rsa']['alpha']:.1f}, γ={exp2['full_rsa']['gamma']:.2f}
+"""
 
-# Compute interaction for later use
-data_int = (EXP2_DATA['singleton']['find_uncont'][0]/EXP2_DATA['singleton']['find_uncont'][1] -
-            EXP2_DATA['singleton']['find_cont'][0]/EXP2_DATA['singleton']['find_cont'][1]) - \
-           (EXP2_DATA['set_id']['find_uncont'][0]/EXP2_DATA['set_id']['find_uncont'][1] -
-            EXP2_DATA['set_id']['find_cont'][0]/EXP2_DATA['set_id']['find_cont'][1])
-rsa_int = (rsa2_pred['singleton']['find_uncont'] - rsa2_pred['singleton']['find_cont']) - \
-          (rsa2_pred['set_id']['find_uncont'] - rsa2_pred['set_id']['find_cont'])
+display(Markdown(f"**Experiment 2 Model Comparison**\n\n{table_md2}\n{param_info}"))
+
+# Compute predicted effects for Full RSA
+preds = exp2['full_rsa']['predictions']
+singleton_effect = preds['singleton']['find_uncont'] - preds['singleton']['find_cont']
+setid_effect = preds['set_id']['find_uncont'] - preds['set_id']['find_cont']
+print(f"\nFull RSA predictions:")
+print(f"  Singleton effect: {singleton_effect:.0%}")
+print(f"  Set-ID effect: {setid_effect:.0%}")
+print(f"  Interaction: {singleton_effect - setid_effect:.0%}")
+
+# Observed data effects
+obs_singleton = EXP2_DATA['singleton']['find_uncont'][0]/EXP2_DATA['singleton']['find_uncont'][1] - \
+                EXP2_DATA['singleton']['find_cont'][0]/EXP2_DATA['singleton']['find_cont'][1]
+obs_setid = EXP2_DATA['set_id']['find_uncont'][0]/EXP2_DATA['set_id']['find_uncont'][1] - \
+            EXP2_DATA['set_id']['find_cont'][0]/EXP2_DATA['set_id']['find_cont'][1]
+print(f"\nObserved data:")
+print(f"  Singleton effect: {obs_singleton:.0%}")
+print(f"  Set-ID effect: {obs_setid:.0%}")
+print(f"  Interaction: {obs_singleton - obs_setid:.0%}")
 ```
 
 ## Summary
 
 ```{python}
-# Create summary table
+# Create summary table comparing AIC differences
 summary_data = pd.DataFrame({
     'Experiment': ['Exp 1', 'Exp 1', 'Exp 2', 'Exp 2'],
     'Comparison': ['Null vs Goal-matching', 'Goal-matching vs RSA',
                    'Null vs Goal-matching', 'Goal-matching vs RSA'],
-    'ΔWAIC': [null_waic - gm_waic, gm_waic - rsa_waic,
-              null2_waic - gm2_waic, gm2_waic - rsa2_waic]
+    'ΔAIC': [
+        exp1['null']['aic'] - exp1['goal_matching']['aic'],
+        exp1['goal_matching']['aic'] - exp1['rsa']['aic'],
+        exp2['null']['aic'] - exp2['goal_matching']['aic'],
+        exp2['goal_matching']['aic'] - exp2['full_rsa']['aic']
+    ]
 })
 
-summary_md = "| Experiment | Comparison | ΔWAIC |\n|:-----------|:-----------|------:|\n"
+summary_md = "| Experiment | Comparison | ΔAIC |\n|:-----------|:-----------|-----:|\n"
 for _, row in summary_data.iterrows():
-    delta = row['ΔWAIC']
-    # Positive ΔWAIC means first model is worse (higher WAIC)
+    delta = row['ΔAIC']
     summary_md += f"| {row['Experiment']} | {row['Comparison']} | {delta:+.1f} |\n"
 
-display(Markdown(f"**Model Comparison Summary** (positive ΔWAIC favors second model)\n\n{summary_md}"))
+display(Markdown(f"**Model Comparison Summary** (positive ΔAIC favors second model)\n\n{summary_md}"))
 ```
 
 ```{python}
-# Save all results
-results = {
-    'exp1_params': EXP1_PARAMS,
-    'exp2_params': EXP2_PARAMS,
-    'exp1': {
-        'data': {f"{g}_{b}": {'s': s, 't': t} for (g, b), (s, t) in EXP1_DATA.items()},
-        'models': {
-            'null': {'waic': null_waic, 'brier': null_brier},
-            'goal_matching': {'waic': gm_waic, 'brier': gm_brier},
-            'full_rsa': {'waic': rsa_waic, 'brier': rsa_brier}
-        }
-    },
-    'exp2': {
-        'data': EXP2_DATA,
-        'models': {
-            'null': {'waic': null2_waic, 'brier': null2_brier},
-            'goal_matching': {'waic': gm2_waic, 'brier': gm2_brier},
-            'exhaustive_rsa': {'waic': exh_waic, 'brier': exh_brier},
-            'mention_some_rsa': {'waic': ms_waic, 'brier': ms_brier},
-            'full_rsa': {'waic': rsa2_waic, 'brier': rsa2_brier}
-        }
-    }
-}
+# Save all results to JSON
+import json
+
+# Convert results to JSON-serializable format
+def serialize_results(res):
+    """Convert numpy types to Python types for JSON serialization."""
+    if isinstance(res, dict):
+        return {k: serialize_results(v) for k, v in res.items()}
+    elif isinstance(res, (np.floating, np.integer)):
+        return float(res)
+    elif isinstance(res, np.ndarray):
+        return res.tolist()
+    return res
+
+output = serialize_results(results)
 
 with open(SCRIPT_DIR / 'model_comparison_results.json', 'w') as f:
-    json.dump(results, f, indent=2)
+    json.dump(output, f, indent=2)
 print(f"\nResults saved to {SCRIPT_DIR / 'model_comparison_results.json'}")
 ```
