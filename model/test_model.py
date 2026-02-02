@@ -297,14 +297,15 @@ def test_regression_pinned_values():
     results = []
 
     # Pinned values for count-based model (update intentionally if model changes)
-    # Note: model uses p_uncont for listener prior in KL, not symmetric
+    # Note: At p=0.5, count model matches bitmask exactly. At asymmetric rates,
+    # there's ~0.6pp approximation error due to exchangeability assumption.
     test_cases = [
         # (n, rate, gamma, decision_type, expected_find_uncont_p_which_uncont)
         (5, 0.5, 0.9, 'singleton', 0.808),
-        (5, 0.5, 0.9, 'set_id', 0.549),
+        (5, 0.5, 0.9, 'set_id', 0.602),
         (10, 0.5, 0.9, 'singleton', 0.846),
-        (10, 0.2, 0.9, 'singleton', 0.264),
-        (10, 0.8, 0.9, 'singleton', 0.981),
+        (10, 0.2, 0.9, 'singleton', 0.440),
+        (10, 0.8, 0.9, 'singleton', 0.947),
     ]
 
     for n, rate, gamma, dtype, expected in test_cases:

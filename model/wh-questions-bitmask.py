@@ -196,7 +196,7 @@ def compute_r0(q, n_cont_known, n_uncont_known):
     total = sum(response_weights)
     if total == 0:
         return {0: 1.0}
-    return {r: w / total for r, w in enumerate(response_weights) if w > 1e-10}
+    return {r: w / total for r, w in enumerate(response_weights) if w > 0}
 
 
 def compute_q1(g):
