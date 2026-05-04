@@ -25,6 +25,7 @@ analysis/figures/
 
 # Quarto local cache
 .quarto/
+**/*.quarto_ipynb
 
 # Overleaf-cloned latex/ directory (its own git repo; excluded here)
 latex/
