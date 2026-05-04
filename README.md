@@ -25,7 +25,7 @@ Question Polarity* (Lee & Hawkins, CogSci 2026).
 
 - `model/` — RSA model (Python) and parameter fitting
 - `analysis/` — empirical analysis (Quarto/R)
-- `data/` — per-participant CSVs (Prolific IDs replaced with `subj_NNN`; see `deidentify.py`)
+- `data/` — per-participant CSVs (anonymized; Prolific IDs replaced with `subj_NNN`)
 - `experiment/` — jsPsych source for the two experiments
 
 ## Dependencies
