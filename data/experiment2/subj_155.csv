@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,3448,0,0,2.0.0,3449,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,
+instructions,61666,,1,2.0.0,65117,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,"[{""page_index"":0,""viewing_time"":5987},{""page_index"":1,""viewing_time"":9294},{""page_index"":2,""viewing_time"":9538},{""page_index"":3,""viewing_time"":10402},{""page_index"":4,""viewing_time"":26446}]",,,,,,,,,,
+survey-multi-choice,7884,"{""goal_check"":""Remove contaminated vials to pass the safety inspection""}",2,2.0.0,73002,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,[0],true,"[""Help Dr. Smith run experiments on uncontaminated vials"",""Ask your colleague multiple questions"",""Remove contaminated vials to pass the safety inspection"",""Sort vials as quickly as possible""]",,,,,,,
+html-button-response,1139,0,3,2.0.0,74143,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,
+survey-multi-choice,7253,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,81396,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,[0],true,"[""The colleague knows nothing."",""The colleague knows for certain about some vials, not about others."",""The colleague knows the status of all the vials."",""It depends on the trial.""]",,,,,,,
+html-button-response,1162,0,5,2.0.0,82560,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,
+html-button-response,15536,1,6,2.0.0,98098,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,14970,"{""strategy"":""I know I need to dispose of the vials that ARE contaminated.""}",7,2.0.0,113075,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,
+html-button-response,18101,0,8,2.0.0,131177,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,
+call-function,,,9,2.0.0,131181,subj_155,exp2,cont,0.5,set_id,2026-01-25T03:18:03.556Z,,,,,,,,,,,

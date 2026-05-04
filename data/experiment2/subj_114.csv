@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,3228,0,0,2.0.0,3237,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,
+instructions,55709,,1,2.0.0,58945,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,"[{""page_index"":0,""viewing_time"":5096},{""page_index"":1,""viewing_time"":13623},{""page_index"":2,""viewing_time"":12740},{""page_index"":3,""viewing_time"":8322},{""page_index"":4,""viewing_time"":15927}]",,,,,,,,,,
+survey-multi-choice,10480,"{""goal_check"":""Remove contaminated vials to pass the safety inspection""}",2,2.0.0,69427,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,[0],true,"[""Sort vials as quickly as possible"",""Help Dr. Smith run experiments on uncontaminated vials"",""Remove contaminated vials to pass the safety inspection"",""Ask your colleague multiple questions""]",,,,,,,
+html-button-response,989,0,3,2.0.0,70417,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,
+survey-multi-choice,9039,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,79457,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows nothing."",""The colleague knows for certain about some vials, not about others."",""It depends on the trial.""]",,,,,,,
+html-button-response,1047,0,5,2.0.0,80507,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,
+html-button-response,14299,0,6,2.0.0,94807,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,39887,"{""strategy"":""Separate first the good ones to avoid contamination""}",7,2.0.0,134707,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,
+html-button-response,5157,0,8,2.0.0,139866,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,
+call-function,,,9,2.0.0,139866,subj_114,exp2,cont,0.5,set_id,2026-01-25T03:10:19.246Z,,,,,,,,,,,

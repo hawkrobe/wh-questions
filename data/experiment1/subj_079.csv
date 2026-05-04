@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,6574,0,0,2.0.0,6580,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+instructions,40132,,1,2.0.0,46715,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,"[{""page_index"":0,""viewing_time"":5379},{""page_index"":1,""viewing_time"":10701},{""page_index"":2,""viewing_time"":8282},{""page_index"":3,""viewing_time"":8918},{""page_index"":4,""viewing_time"":6851}]",,,,,,,
+survey-multi-choice,7061,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,53781,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,[0],true,"[""Ask your colleague multiple questions"",""Run experiment on an uncontaminated vial"",""Test as many vials as possible"",""Find out the contaminant that went in the vials""]",,,,
+html-button-response,1430,0,3,2.0.0,55214,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+survey-multi-choice,4834,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,60051,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing."",""It depends on the trial.""]",,,,
+html-button-response,1237,0,5,2.0.0,61291,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+survey-multi-choice,7750,"{""baserate_check"":""mostly contaminated, only a few uncontaminated""}",6,2.0.0,69043,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,[0],true,"[""only a few contaminated, mostly uncontaminated"",""mostly contaminated, only a few uncontaminated"",""I don't know"",""only a few contaminated, mostly uncontaminated""]",,,,
+html-button-response,1106,0,7,2.0.0,70152,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+survey-html-form,12089,"{""completion"":""safe""}",8,2.0.0,82267,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,exp1_trial1,0.8,safe,
+survey-text,37678,"{""strategy"":""if I know which ones are for sure safe, my guess on contaminated coal will be more likely to be correct""}",9,2.0.0,119949,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+html-button-response,6343,0,10,2.0.0,126294,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,
+call-function,,,11,2.0.0,126296,subj_079,exp1,cont,0.8,singleton,2026-01-25T03:10:36.743Z,,,,,,,,

@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,4508,0,0,2.0.0,4514,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,
+instructions,71282,,1,2.0.0,75800,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,"[{""page_index"":0,""viewing_time"":12987},{""page_index"":1,""viewing_time"":8576},{""page_index"":2,""viewing_time"":14456},{""page_index"":3,""viewing_time"":21040},{""page_index"":4,""viewing_time"":14224}]",,,,,,,,,,
+survey-multi-choice,7714,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,83523,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,[0],true,"[""Run experiment on an uncontaminated vial"",""Ask your colleague multiple questions"",""Find out the contaminant that went in the vials"",""Test as many vials as possible""]",,,,,,,
+html-button-response,2150,0,3,2.0.0,85681,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,
+survey-multi-choice,14068,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,99754,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,[0],true,"[""The colleague knows the status of all the vials."",""It depends on the trial."",""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing.""]",,,,,,,
+html-button-response,1377,0,5,2.0.0,101136,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,
+html-button-response,5915,1,6,2.0.0,107057,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,66828,"{""strategy"":""i decided on the strategy by thinking of which vial is contaminated""}",7,2.0.0,173906,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,
+html-button-response,5664,0,8,2.0.0,179574,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,
+call-function,,,9,2.0.0,179577,subj_125,exp2,cont,0.5,singleton,2026-01-25T05:18:53.175Z,,,,,,,,,,,

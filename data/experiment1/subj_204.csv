@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,2605,0,0,2.0.0,2615,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+instructions,59130,,1,2.0.0,61752,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,"[{""page_index"":0,""viewing_time"":8226},{""page_index"":1,""viewing_time"":10561},{""page_index"":2,""viewing_time"":8880},{""page_index"":3,""viewing_time"":8308},{""page_index"":4,""viewing_time"":23153}]",,,,,,,
+survey-multi-choice,34459,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,96223,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,[0],true,"[""Run experiment on an uncontaminated vial"",""Ask your colleague multiple questions"",""Find out the contaminant that went in the vials"",""Test as many vials as possible""]",,,,
+html-button-response,2010,0,3,2.0.0,98243,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+survey-multi-choice,9473,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,107723,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others."",""It depends on the trial."",""The colleague knows nothing.""]",,,,
+html-button-response,1308,0,5,2.0.0,109045,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+survey-multi-choice,7651,"{""baserate_check"":""mostly contaminated, only a few uncontaminated""}",6,2.0.0,116705,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,[0],true,"[""only a few contaminated, mostly uncontaminated"",""I don't know"",""mostly contaminated, only a few uncontaminated"",""only a few contaminated, mostly uncontaminated""]",,,,
+html-button-response,1257,0,7,2.0.0,117972,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+survey-html-form,19615,"{""completion"":""At risk for contamination ""}",8,2.0.0,137651,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,exp1_trial1,0.8,At risk for contamination,
+survey-text,34672,"{""strategy"":""Hoping my coworker knows if any were at risk through reasons that are not listed ""}",9,2.0.0,172341,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+html-button-response,3510,0,10,2.0.0,175859,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,
+call-function,,,11,2.0.0,175895,subj_204,exp1,uncont,0.8,singleton,2026-01-26T00:25:03.018Z,,,,,,,,

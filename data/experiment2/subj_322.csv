@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,2755,0,0,2.0.0,2758,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,
+instructions,34694,,1,2.0.0,37456,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,"[{""page_index"":0,""viewing_time"":4511},{""page_index"":1,""viewing_time"":6017},{""page_index"":2,""viewing_time"":6716},{""page_index"":3,""viewing_time"":7517},{""page_index"":4,""viewing_time"":9934}]",,,,,,,,,,
+survey-multi-choice,11697,"{""goal_check"":""Help Dr. Smith run experiments on uncontaminated vials""}",2,2.0.0,49157,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,[0],true,"[""Ask your colleague multiple questions"",""Help Dr. Smith run experiments on uncontaminated vials"",""Remove contaminated vials to pass the safety inspection"",""Sort vials as quickly as possible""]",,,,,,,
+html-button-response,927,0,3,2.0.0,50088,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,
+survey-multi-choice,5797,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,55889,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,[0],true,"[""It depends on the trial."",""The colleague knows nothing."",""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others.""]",,,,,,,
+html-button-response,997,0,5,2.0.0,56888,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,
+html-button-response,4181,1,6,2.0.0,61072,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,exp2_trial1,0.5,"[""Which vials are contaminated?"",""Which vials are not contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,15106,"{""strategy"":""It's more helpful to the goal of the identification. ""}",7,2.0.0,76189,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,
+html-button-response,2180,0,8,2.0.0,78372,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,
+call-function,,,9,2.0.0,78373,subj_322,exp2,uncont,0.5,set_id,2026-01-26T00:24:16.411Z,,,,,,,,,,,

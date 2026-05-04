@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,3416,0,0,2.0.0,3419,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,
+instructions,60634,,1,2.0.0,64057,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,"[{""page_index"":0,""viewing_time"":4897},{""page_index"":1,""viewing_time"":14867},{""page_index"":2,""viewing_time"":18338},{""page_index"":3,""viewing_time"":9912},{""page_index"":4,""viewing_time"":12620}]",,,,,,,,,,
+survey-multi-choice,8639,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,72700,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,[0],true,"[""Test as many vials as possible"",""Find out the contaminant that went in the vials"",""Ask your colleague multiple questions"",""Run experiment on an uncontaminated vial""]",,,,,,,
+html-button-response,1135,0,3,2.0.0,73837,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,
+survey-multi-choice,15657,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,89496,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,[0],true,"[""The colleague knows for certain about some vials, not about others."",""It depends on the trial."",""The colleague knows the status of all the vials."",""The colleague knows nothing.""]",,,,,,,
+html-button-response,1242,0,5,2.0.0,90741,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,
+html-button-response,5617,0,6,2.0.0,96361,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,exp2_trial1,0.5,"[""Which vials are contaminated?"",""Which vials are not contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,35962,"{""strategy"":""I can isolate the vials contaminated to start working out the contaminant ""}",7,2.0.0,132327,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,
+html-button-response,2185,0,8,2.0.0,134514,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,
+call-function,,,9,2.0.0,134515,subj_093,exp2,cont,0.5,singleton,2026-01-25T05:17:00.327Z,,,,,,,,,,,

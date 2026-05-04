@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,6080,0,0,2.0.0,6089,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,
+instructions,54794,,1,2.0.0,60884,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,"[{""page_index"":0,""viewing_time"":4541},{""page_index"":1,""viewing_time"":11331},{""page_index"":2,""viewing_time"":9293},{""page_index"":3,""viewing_time"":14035},{""page_index"":4,""viewing_time"":15594}]",,,,,,,,,,
+survey-multi-choice,10673,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,71561,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,[0],true,"[""Ask your colleague multiple questions"",""Find out the contaminant that went in the vials"",""Run experiment on an uncontaminated vial"",""Test as many vials as possible""]",,,,,,,
+html-button-response,949,0,3,2.0.0,72514,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,
+survey-multi-choice,9665,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,82182,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,[0],true,"[""The colleague knows nothing."",""It depends on the trial."",""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others.""]",,,,,,,
+html-button-response,1094,0,5,2.0.0,83279,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,
+html-button-response,6534,0,6,2.0.0,89815,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,25817,"{""strategy"":""Because I need a vial that's for certain not contaminated.""}",7,2.0.0,115638,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,
+html-button-response,9719,0,8,2.0.0,125359,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,
+call-function,,,9,2.0.0,125360,subj_333,exp2,uncont,0.5,singleton,2026-01-26T00:24:48.318Z,,,,,,,,,,,

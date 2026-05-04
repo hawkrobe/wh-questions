@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,34272,0,0,2.0.0,34277,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,
+instructions,23301,,1,2.0.0,57579,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,"[{""page_index"":0,""viewing_time"":2741},{""page_index"":1,""viewing_time"":2928},{""page_index"":2,""viewing_time"":7088},{""page_index"":3,""viewing_time"":5224},{""page_index"":4,""viewing_time"":5320}]",,,,,,,,,,
+survey-multi-choice,8920,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,66501,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,[0],true,"[""Find out the contaminant that went in the vials"",""Test as many vials as possible"",""Run experiment on an uncontaminated vial"",""Ask your colleague multiple questions""]",,,,,,,
+html-button-response,869,0,3,2.0.0,67371,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,
+survey-multi-choice,5279,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,72652,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others."",""It depends on the trial."",""The colleague knows nothing.""]",,,,,,,
+html-button-response,670,0,5,2.0.0,73323,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,
+html-button-response,15143,1,6,2.0.0,88469,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,exp2_trial1,0.5,"[""Which vials are contaminated?"",""Which vials are not contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,23946,"{""strategy"":""Is there a commonality to non-contaminated""}",7,2.0.0,112420,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,
+html-button-response,2391,0,8,2.0.0,114812,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,
+call-function,,,9,2.0.0,114813,subj_003,exp2,cont,0.5,singleton,2026-01-25T05:18:00.678Z,,,,,,,,,,,

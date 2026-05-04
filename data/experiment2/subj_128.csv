@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,1491,0,0,2.0.0,1499,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,
+instructions,67351,,1,2.0.0,68853,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,"[{""page_index"":0,""viewing_time"":7906},{""page_index"":1,""viewing_time"":20512},{""page_index"":2,""viewing_time"":13652},{""page_index"":3,""viewing_time"":14648},{""page_index"":4,""viewing_time"":10632}]",,,,,,,,,,
+survey-multi-choice,5455,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,74312,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,[0],true,"[""Test as many vials as possible"",""Find out the contaminant that went in the vials"",""Ask your colleague multiple questions"",""Run experiment on an uncontaminated vial""]",,,,,,,
+html-button-response,927,0,3,2.0.0,75243,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,
+survey-multi-choice,5006,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,80251,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,[0],true,"[""The colleague knows nothing."",""It depends on the trial."",""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others.""]",,,,,,,
+html-button-response,907,0,5,2.0.0,81162,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,
+html-button-response,3445,1,6,2.0.0,84609,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,29357,"{""strategy"":""I feel that knowing what the contaminant is will help to test for it""}",7,2.0.0,114284,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,
+html-button-response,2550,0,8,2.0.0,116837,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,
+call-function,,,9,2.0.0,116840,subj_128,exp2,cont,0.5,singleton,2026-01-25T03:14:25.564Z,,,,,,,,,,,

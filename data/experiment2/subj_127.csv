@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,13582,0,0,2.0.0,13590,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,
+instructions,61553,,1,2.0.0,75146,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,"[{""page_index"":0,""viewing_time"":5086},{""page_index"":1,""viewing_time"":14980},{""page_index"":2,""viewing_time"":12976},{""page_index"":3,""viewing_time"":11937},{""page_index"":4,""viewing_time"":16574}]",,,,,,,,,,
+survey-multi-choice,24939,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,100089,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,[0],true,"[""Ask your colleague multiple questions"",""Run experiment on an uncontaminated vial"",""Find out the contaminant that went in the vials"",""Test as many vials as possible""]",,,,,,,
+html-button-response,1487,0,3,2.0.0,101578,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,
+survey-multi-choice,8277,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,109857,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows nothing."",""It depends on the trial."",""The colleague knows for certain about some vials, not about others.""]",,,,,,,
+html-button-response,1294,0,5,2.0.0,111154,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,
+html-button-response,16121,0,6,2.0.0,127278,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,exp2_trial1,0.5,"[""Which vials are contaminated?"",""Which vials are not contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,44896,"{""strategy"":""They may not be sure which ones aren't contaminated.""}",7,2.0.0,172186,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,
+html-button-response,2865,0,8,2.0.0,175055,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,
+call-function,,,9,2.0.0,175060,subj_127,exp2,uncont,0.5,singleton,2026-01-26T00:24:51.712Z,,,,,,,,,,,

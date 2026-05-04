@@ -11,10 +11,23 @@ __pycache__/
 .eggs/
 *.egg
 
-# Simulation outputs
+# Simulation / analysis rendered outputs (regenerable from .qmd sources)
 model/simulation_results.json
 model/simulations.html
 model/simulations_files/
+model/model_predictions.pdf
+model/exp1_model_predictions.pdf
+model/exp2_model_predictions.pdf
+model/model_comparison_results.json
+analysis/cogsci_whQ_analysis.html
+analysis/cogsci_whQ_analysis_files/
+analysis/figures/
+
+# Quarto local cache
+.quarto/
+
+# Overleaf-cloned latex/ directory (its own git repo; excluded here)
+latex/
 
 # IDE
 .vscode/
@@ -29,3 +42,4 @@ node_modules/
 # Playwright
 playwright-report/
 test-results/
+.pid_mapping.json

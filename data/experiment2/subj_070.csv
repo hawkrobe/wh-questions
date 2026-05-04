@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,2410,0,0,2.0.0,2414,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,
+instructions,48361,,1,2.0.0,50778,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,"[{""page_index"":0,""viewing_time"":11735},{""page_index"":1,""viewing_time"":6160},{""page_index"":2,""viewing_time"":6698},{""page_index"":3,""viewing_time"":7516},{""page_index"":4,""viewing_time"":16252}]",,,,,,,,,,
+survey-multi-choice,34295,"{""goal_check"":""Remove contaminated vials to pass the safety inspection""}",2,2.0.0,85077,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,[0],true,"[""Remove contaminated vials to pass the safety inspection"",""Sort vials as quickly as possible"",""Ask your colleague multiple questions"",""Help Dr. Smith run experiments on uncontaminated vials""]",,,,,,,
+html-button-response,1545,0,3,2.0.0,86632,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,
+survey-multi-choice,21152,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,107789,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,[0],true,"[""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing."",""The colleague knows the status of all the vials."",""It depends on the trial.""]",,,,,,,
+html-button-response,1211,0,5,2.0.0,109011,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,
+html-button-response,10717,0,6,2.0.0,119731,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,25375,"{""strategy"":""I wantes to ask the mist direct and efficient question.""}",7,2.0.0,145110,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,
+html-button-response,2522,0,8,2.0.0,147633,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,
+call-function,,,9,2.0.0,147634,subj_070,exp2,cont,0.5,set_id,2026-01-26T00:24:46.871Z,,,,,,,,,,,

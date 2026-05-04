@@ -33,7 +33,7 @@ EXP2_DATA = {
 }
 
 N_VIALS = 10
-LENGTH_COST = 0.01  # Fixed, not fit
+LENGTH_COST = 0.1  # Fixed, not fit
 
 
 # ============================================================================

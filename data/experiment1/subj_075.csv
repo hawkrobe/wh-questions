@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,2081,0,0,2.0.0,2090,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+instructions,22431,,1,2.0.0,24529,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,"[{""page_index"":0,""viewing_time"":3715},{""page_index"":1,""viewing_time"":4465},{""page_index"":2,""viewing_time"":3305},{""page_index"":3,""viewing_time"":6040},{""page_index"":4,""viewing_time"":4906}]",,,,,,,
+survey-multi-choice,4006,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,28538,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,[0],true,"[""Ask your colleague multiple questions"",""Test as many vials as possible"",""Run experiment on an uncontaminated vial"",""Find out the contaminant that went in the vials""]",,,,
+html-button-response,1080,0,3,2.0.0,29620,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+survey-multi-choice,2998,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,32622,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,[0],true,"[""The colleague knows nothing."",""The colleague knows for certain about some vials, not about others."",""It depends on the trial."",""The colleague knows the status of all the vials.""]",,,,
+html-button-response,1075,0,5,2.0.0,33701,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+survey-multi-choice,4888,"{""baserate_check"":""mostly contaminated, only a few uncontaminated""}",6,2.0.0,38593,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,[0],true,"[""mostly contaminated, only a few uncontaminated"",""only a few contaminated, mostly uncontaminated"",""only a few contaminated, mostly uncontaminated"",""I don't know""]",,,,
+html-button-response,1092,0,7,2.0.0,39689,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+survey-html-form,26344,"{""completion"":""Uncontaminated""}",8,2.0.0,66063,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,exp1_trial1,0.8,Uncontaminated,
+survey-text,24855,"{""strategy"":""A simple and straightforward question doesn’t leave room for confusion assuming the colleague is competent""}",9,2.0.0,90926,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+html-button-response,2708,0,10,2.0.0,93638,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,
+call-function,,,11,2.0.0,93641,subj_075,exp1,uncont,0.8,singleton,2026-01-25T03:10:13.965Z,,,,,,,,

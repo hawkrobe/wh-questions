@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,4383,0,0,2.0.0,4389,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+instructions,51273,,1,2.0.0,55664,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,"[{""page_index"":0,""viewing_time"":6493},{""page_index"":1,""viewing_time"":21851},{""page_index"":2,""viewing_time"":7374},{""page_index"":3,""viewing_time"":9244},{""page_index"":4,""viewing_time"":6310}]",,,,,,,
+survey-multi-choice,7887,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,63554,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,[0],true,"[""Find out the contaminant that went in the vials"",""Run experiment on an uncontaminated vial"",""Test as many vials as possible"",""Ask your colleague multiple questions""]",,,,
+html-button-response,1099,0,3,2.0.0,64656,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+survey-multi-choice,3566,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,68223,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,[0],true,"[""The colleague knows nothing."",""The colleague knows for certain about some vials, not about others."",""It depends on the trial."",""The colleague knows the status of all the vials.""]",,,,
+html-button-response,973,0,5,2.0.0,69199,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+survey-multi-choice,5528,"{""baserate_check"":""half contaminated, half uncontaminated""}",6,2.0.0,74730,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,[0],true,"[""half contaminated, half uncontaminated"",""mostly contaminated, only a few uncontaminated"",""I don't know"",""only a few contaminated, mostly uncontaminated""]",,,,
+html-button-response,1655,0,7,2.0.0,76387,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+survey-html-form,10241,"{""completion"":""contaminated""}",8,2.0.0,86644,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,exp1_trial1,0.5,contaminated,
+survey-text,25487,"{""strategy"":""The whole point is to find out which vials are contaminated. ""}",9,2.0.0,112140,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+html-button-response,2609,0,10,2.0.0,114751,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,
+call-function,,,11,2.0.0,114752,subj_105,exp1,cont,0.5,singleton,2026-01-26T00:24:18.048Z,,,,,,,,

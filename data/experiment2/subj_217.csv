@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,6115,0,0,2.0.0,6118,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,
+instructions,85115,,1,2.0.0,91234,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,"[{""page_index"":0,""viewing_time"":14247},{""page_index"":1,""viewing_time"":41742},{""page_index"":2,""viewing_time"":11224},{""page_index"":3,""viewing_time"":9368},{""page_index"":4,""viewing_time"":8535}]",,,,,,,,,,
+survey-multi-choice,9302,"{""goal_check"":""Find out the contaminant that went in the vials""}",2,2.0.0,100537,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,[0],true,"[""Test as many vials as possible"",""Run experiment on an uncontaminated vial"",""Find out the contaminant that went in the vials"",""Ask your colleague multiple questions""]",,,,,,,
+html-button-response,792,0,3,2.0.0,101330,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,
+survey-multi-choice,5750,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,107081,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows nothing."",""It depends on the trial."",""The colleague knows for certain about some vials, not about others.""]",,,,,,,
+html-button-response,680,0,5,2.0.0,107762,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,
+html-button-response,13382,0,6,2.0.0,121145,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,17715,"{""strategy"":""I just follow my feelings""}",7,2.0.0,138871,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,
+html-button-response,10479,0,8,2.0.0,149352,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,
+call-function,,,9,2.0.0,149354,subj_217,exp2,cont,0.5,singleton,2026-01-26T00:25:22.606Z,,,,,,,,,,,

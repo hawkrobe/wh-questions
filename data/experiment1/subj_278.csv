@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,3106,0,0,2.0.0,3110,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+instructions,95486,,1,2.0.0,98602,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,"[{""page_index"":0,""viewing_time"":10281},{""page_index"":1,""viewing_time"":13300},{""page_index"":2,""viewing_time"":12363},{""page_index"":3,""viewing_time"":8903},{""page_index"":4,""viewing_time"":50639}]",,,,,,,
+survey-multi-choice,8925,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,107534,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,[0],true,"[""Test as many vials as possible"",""Run experiment on an uncontaminated vial"",""Ask your colleague multiple questions"",""Find out the contaminant that went in the vials""]",,,,
+html-button-response,1425,0,3,2.0.0,108967,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+survey-multi-choice,6755,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,115725,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,[0],true,"[""The colleague knows for certain about some vials, not about others."",""The colleague knows the status of all the vials."",""The colleague knows nothing."",""It depends on the trial.""]",,,,
+html-button-response,1182,0,5,2.0.0,116919,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+survey-multi-choice,10536,"{""baserate_check"":""only a few contaminated, mostly uncontaminated""}",6,2.0.0,127457,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,[0],true,"[""mostly contaminated, only a few uncontaminated"",""only a few contaminated, mostly uncontaminated"",""I don't know"",""half contaminated, half uncontaminated""]",,,,
+html-button-response,1164,0,7,2.0.0,128634,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+survey-html-form,43488,"{""completion"":""still viable to use""}",8,2.0.0,172145,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,exp1_trial1,0.2,still viable to use,
+survey-text,24083,"{""strategy"":""I wanted to word it in a way they could answer with the knowledge they have. ""}",9,2.0.0,196231,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+html-button-response,15242,0,10,2.0.0,211475,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,
+call-function,,,11,2.0.0,211476,subj_278,exp1,uncont,0.2,singleton,2026-01-26T00:25:55.823Z,,,,,,,,

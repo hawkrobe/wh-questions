@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,2008,0,0,2.0.0,2010,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,
+instructions,60909,,1,2.0.0,62920,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,"[{""page_index"":0,""viewing_time"":3622},{""page_index"":1,""viewing_time"":4938},{""page_index"":2,""viewing_time"":9841},{""page_index"":3,""viewing_time"":26896},{""page_index"":4,""viewing_time"":15612}]",,,,,,,,,,
+survey-multi-choice,4853,"{""goal_check"":""Remove contaminated vials to pass the safety inspection""}",2,2.0.0,67774,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,[0],true,"[""Sort vials as quickly as possible"",""Ask your colleague multiple questions"",""Help Dr. Smith run experiments on uncontaminated vials"",""Remove contaminated vials to pass the safety inspection""]",,,,,,,
+html-button-response,699,0,3,2.0.0,68474,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,
+survey-multi-choice,3482,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,71957,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,[0],true,"[""The colleague knows the status of all the vials."",""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing."",""It depends on the trial.""]",,,,,,,
+html-button-response,595,0,5,2.0.0,72553,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,
+html-button-response,2783,0,6,2.0.0,75337,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,exp2_trial1,0.5,"[""Which vials are contaminated?"",""Which vials are not contaminated?""]",Which vials are contaminated?,true,false,
+survey-text,51469,"{""strategy"":""Lowkey just guessed ""}",7,2.0.0,126823,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,
+html-button-response,1336,0,8,2.0.0,128161,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,
+call-function,,,9,2.0.0,128161,subj_307,exp2,cont,0.5,set_id,2026-01-25T03:50:22.855Z,,,,,,,,,,,

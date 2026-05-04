@@ -1,0 +1,13 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,raw_response,value
+html-button-response,2591,0,0,2.0.0,2596,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+instructions,44195,,1,2.0.0,46794,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,"[{""page_index"":0,""viewing_time"":8291},{""page_index"":1,""viewing_time"":10505},{""page_index"":2,""viewing_time"":7611},{""page_index"":3,""viewing_time"":8917},{""page_index"":4,""viewing_time"":8870}]",,,,,,,
+survey-multi-choice,6973,"{""goal_check"":""Run experiment on an uncontaminated vial""}",2,2.0.0,53772,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,[0],true,"[""Find out the contaminant that went in the vials"",""Run experiment on an uncontaminated vial"",""Ask your colleague multiple questions"",""Test as many vials as possible""]",,,,
+html-button-response,1338,0,3,2.0.0,55112,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+survey-multi-choice,10342,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,65456,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,[0],true,"[""The colleague knows for certain about some vials, not about others."",""The colleague knows nothing."",""It depends on the trial."",""The colleague knows the status of all the vials.""]",,,,
+html-button-response,1743,0,5,2.0.0,67201,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+survey-multi-choice,3753,"{""baserate_check"":""half contaminated, half uncontaminated""}",6,2.0.0,70956,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,[0],true,"[""half contaminated, half uncontaminated"",""mostly contaminated, only a few uncontaminated"",""I don't know"",""only a few contaminated, mostly uncontaminated""]",,,,
+html-button-response,1127,0,7,2.0.0,72085,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+survey-html-form,12522,"{""completion"":""Red""}",8,2.0.0,84627,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,exp1_trial1,0.5,Red,
+survey-text,12402,"{""strategy"":""I chose the color rather than the number ""}",9,2.0.0,97033,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+html-button-response,2288,0,10,2.0.0,99323,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,
+call-function,,,11,2.0.0,99324,subj_083,exp1,uncont,0.5,singleton,2026-01-26T00:23:49.231Z,,,,,,,,

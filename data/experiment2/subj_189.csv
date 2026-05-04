@@ -1,0 +1,11 @@
+trial_type,rt,response,trial_index,plugin_version,time_elapsed,prolific_pid,exp_version,goal_condition,base_rate_condition,decision_structure,completion_time,view_history,question_order,correct,option_order,trial_id,base_rate,button_order,chosen_question,chose_which_contaminated,chose_which_uncontaminated,value
+html-button-response,2848,0,0,2.0.0,2856,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
+instructions,105971,,1,2.0.0,108831,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,"[{""page_index"":0,""viewing_time"":21466},{""page_index"":1,""viewing_time"":17580},{""page_index"":2,""viewing_time"":13178},{""page_index"":3,""viewing_time"":16943},{""page_index"":4,""viewing_time"":36804}]",,,,,,,,,,
+survey-multi-choice,11840,"{""goal_check"":""Help Dr. Smith run experiments on uncontaminated vials""}",2,2.0.0,120674,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,[0],true,"[""Sort vials as quickly as possible"",""Help Dr. Smith run experiments on uncontaminated vials"",""Remove contaminated vials to pass the safety inspection"",""Ask your colleague multiple questions""]",,,,,,,
+html-button-response,1287,0,3,2.0.0,121964,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
+survey-multi-choice,9006,"{""colleague_check"":""The colleague knows for certain about some vials, not about others.""}",4,2.0.0,130973,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,[0],true,"[""The colleague knows nothing."",""It depends on the trial."",""The colleague knows for certain about some vials, not about others."",""The colleague knows the status of all the vials.""]",,,,,,,
+html-button-response,1061,0,5,2.0.0,132036,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
+html-button-response,20510,0,6,2.0.0,152550,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,exp2_trial1,0.5,"[""Which vials are not contaminated?"",""Which vials are contaminated?""]",Which vials are not contaminated?,false,true,
+survey-text,42867,"{""strategy"":""Those are the vials that are needed.""}",7,2.0.0,195443,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
+html-button-response,22273,0,8,2.0.0,217719,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
+call-function,,,9,2.0.0,217720,subj_189,exp2,uncont,0.5,set_id,2026-01-25T05:16:13.635Z,,,,,,,,,,,
