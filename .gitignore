@@ -19,8 +19,8 @@ model/model_predictions.pdf
 model/exp1_model_predictions.pdf
 model/exp2_model_predictions.pdf
 model/model_comparison_results.json
-analysis/cogsci_whQ_analysis.html
-analysis/cogsci_whQ_analysis_files/
+analysis/cogsci.html
+analysis/cogsci_files/
 analysis/figures/
 
 # Quarto local cache

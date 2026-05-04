@@ -164,7 +164,7 @@ exp1_plot <- ggplot(dat_exp1_summary,
   ) +
   labs(
     x = "Base rate of contamination",
-    y = "P('Which are uncontaminated?')",
+    y = "P('Which are not contaminated?')",
     color = "Goal"
   ) +
   theme_few(base_size = 12) +
