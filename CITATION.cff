@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the following paper."
+title: "A utility-based account of the choice of constituent question polarity"
+authors:
+  - family-names: Lee
+    given-names: Seo-young
+    email: sylee423@stanford.edu
+    affiliation: "Department of Linguistics, Stanford University"
+  - family-names: Hawkins
+    given-names: Robert D.
+    email: rdhawkins@stanford.edu
+    affiliation: "Department of Linguistics, Stanford University"
+year: 2026
+preferred-citation:
+  type: conference-paper
+  title: "A utility-based account of the choice of constituent question polarity"
+  authors:
+    - family-names: Lee
+      given-names: Seo-young
+    - family-names: Hawkins
+      given-names: Robert D.
+  collection-title: "Proceedings of the 48th Annual Meeting of the Cognitive Science Society"
+  year: 2026

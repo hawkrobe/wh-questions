@@ -5,7 +5,7 @@ Exact bitmask implementation of wh-question polarity model.
 This is the O(2^N) reference implementation that enumerates all possible
 world states and responses as bitmasks. Use for verification at small N.
 
-The main model (wh-questions.py) uses O(N²) count-based representation with
+The main model (model.py) uses O(N²) count-based representation with
 hypergeometric weighting, which is faster but uses a different (principled)
 marginalization over unobserved vial identities.
 """
