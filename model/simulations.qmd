@@ -315,9 +315,10 @@ import json
 
 # Convert results to JSON-serializable format
 def serialize_results(res):
-    """Convert numpy types to Python types for JSON serialization."""
+    """Convert numpy types and tuple keys to JSON-compatible forms."""
     if isinstance(res, dict):
-        return {k: serialize_results(v) for k, v in res.items()}
+        return {(",".join(map(str, k)) if isinstance(k, tuple) else k): serialize_results(v)
+                for k, v in res.items()}
     elif isinstance(res, (np.floating, np.integer)):
         return float(res)
     elif isinstance(res, np.ndarray):

@@ -1,4 +1,7 @@
+# Model + fits + tests (model.py, fit.py, test_model.py, wh-questions-bitmask.py)
 numpy
 scipy
+
+# Additionally needed to render simulations.qmd
 matplotlib
 pandas
