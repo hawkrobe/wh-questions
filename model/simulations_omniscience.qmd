@@ -1,0 +1,339 @@
+---
+title: "Wh-Question Polarity Model: Simulations & Model Comparison -- Omniscient Respondent"
+format:
+  html:
+    code-fold: true
+    toc: true
+  pdf:
+    toc: true
+execute:
+  warning: false
+---
+
+## Setup
+
+```{python}
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Import model and fitting utilities
+from model_omni import Model
+#from fit import fit_all_models, EXP1_DATA, EXP2_DATA, N_VIALS, LENGTH_COST
+
+# Fix rationality param alpha and length cost lambda
+ALPHA = 4.8 #rationality; fitted alpha value from previous simulation
+GAMMA = 0.92 #respondent confidence; fitted gamma value from previous simulation
+LENGTH_COST = 0.0 #ignore length cost for the time being
+
+# Set number of vials
+N_VIALS = 10
+
+# Configuration
+SCRIPT_DIR = Path(".").resolve()
+
+matplotlib.rcParams.update({'pdf.fonttype': 42, 'font.family': 'sans-serif', 'font.size': 11})
+COLORS = {'find_uncont': '#4DAF4A', 'find_cont': '#A50F15'}  # Green/red to match empirical figures
+
+# Fit all models (this runs optimization for RSA models)
+#print("Fitting all models...")
+#results = fit_all_models()
+#print("Done!")
+
+# Get fitted parameters for Full RSA (Exp 2)
+#fitted_alpha = results['exp2']['full_rsa']['alpha']
+#fitted_gamma = results['exp2']['full_rsa']['gamma']
+#print(f"Fitted parameters: α={fitted_alpha:.1f}, γ={fitted_gamma:.2f}")
+
+# Create model with FIXED hyperparameters
+model = Model(alpha_r = ALPHA, alpha_q = ALPHA, alpha_policy = ALPHA, gamma = GAMMA, length_cost = LENGTH_COST)
+```
+
+### Experiment 1: Goal × Base Rate
+
+```{python}
+#| label: fig-exp1-predictions
+#| fig-cap: "Model predictions for Experiment 1: Goal alignment across base rates"
+
+# Match the empirical base rates from Experiment 1
+base_rates = np.array([0.2, 0.5, 0.8])
+pred_uncont = []
+pred_cont = []
+
+print("Computing Exp 1 predictions...")
+for br in base_rates:
+    p_uncont = 1 - br
+    preds = model.predict_all('singleton', p_uncont=p_uncont, n_vials=N_VIALS)
+    pred_uncont.append(preds['find_uncont'])
+    pred_cont.append(preds['find_cont'])
+    print(f"  BR={br}: find_uncont={preds['find_uncont']:.2f}, find_cont={preds['find_cont']:.2f}")
+
+fig, ax = plt.subplots(figsize=(5, 4))
+
+# Line plot matching empirical figure style
+ax.plot(base_rates, pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=7, label='Find uncontaminated')
+ax.plot(base_rates, pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=7, label='Find contaminated')
+
+ax.set_xlabel('Base rate of contamination')
+ax.set_ylabel('P("Which are uncontaminated?")')
+ax.set_xticks(base_rates)
+ax.set_xticklabels(['20%', '50%', '80%'])
+ax.set_ylim(0, 1)
+ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax.legend(title='Goal', loc='upper left', frameon=False)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.savefig(SCRIPT_DIR / 'exp1_model_predictions_omni.pdf', format='pdf', bbox_inches='tight')
+plt.show()
+```
+
+### Experiment 2: Goal × Decision Structure
+
+```{python}
+#| label: fig-exp2-predictions
+#| fig-cap: "Model predictions for Experiment 2: Goal alignment depends on decision structure"
+
+# Compute predictions at 50% base rate for both decision types
+predictions = {}
+
+for dt in ['singleton', 'set_id']:
+    preds = model.predict_all(dt, p_uncont=0.5, n_vials=N_VIALS)
+    for g_name in ['find_uncont', 'find_cont']:
+        predictions[(dt, g_name)] = preds[g_name]
+        print(f"{dt}, {g_name}: {preds[g_name]:.2%}")
+
+# Bar plot matching empirical figure style (grouped by decision structure)
+fig, ax = plt.subplots(figsize=(5, 4))
+
+x = np.array([0, 1])  # Singleton, Set ID
+width = 0.35
+
+# Group bars by decision structure, color by goal
+find_uncont_vals = [predictions[('singleton', 'find_uncont')], predictions[('set_id', 'find_uncont')]]
+find_cont_vals = [predictions[('singleton', 'find_cont')], predictions[('set_id', 'find_cont')]]
+
+ax.bar(x - width/2, find_uncont_vals, width, label='Find uncontaminated', color=COLORS['find_uncont'])
+ax.bar(x + width/2, find_cont_vals, width, label='Find contaminated', color=COLORS['find_cont'])
+
+ax.set_xlabel('Decision structure')
+ax.set_ylabel('P("Which are not contaminated?")')
+ax.set_xticks(x)
+ax.set_xticklabels(['Singleton', 'Set ID'])
+ax.set_ylim(0, 1)
+ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax.legend(title='Goal', loc='upper right', frameon=False)
+ax.spines[['top', 'right']].set_visible(False)
+
+plt.tight_layout()
+plt.savefig(SCRIPT_DIR / 'exp2_model_predictions_omni.pdf', format='pdf', bbox_inches='tight')
+plt.show()
+
+# Print effect sizes
+singleton_effect = predictions[('singleton', 'find_uncont')] - predictions[('singleton', 'find_cont')]
+setid_effect = predictions[('set_id', 'find_uncont')] - predictions[('set_id', 'find_cont')]
+print(f"\nSingleton effect: {singleton_effect:.0%}")
+print(f"Set-ID effect: {setid_effect:.0%}")
+print(f"Interaction: {singleton_effect - setid_effect:.0%}")
+```
+
+### Combined Figure
+
+```{python}
+#| label: fig-combined-predictions
+#| fig-cap: "Combined model predictions for both experiments"
+
+# Recompute Exp 1 predictions
+base_rates = np.array([0.2, 0.5, 0.8])
+exp1_pred_uncont = []
+exp1_pred_cont = []
+
+for br in base_rates:
+    preds = model.predict_all('singleton', p_uncont=1-br, n_vials=N_VIALS)
+    exp1_pred_uncont.append(preds['find_uncont'])
+    exp1_pred_cont.append(preds['find_cont'])
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
+
+# Panel A: Experiment 1
+ax1.plot(base_rates, exp1_pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=7, label='Find uncontaminated')
+ax1.plot(base_rates, exp1_pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=7, label='Find contaminated')
+ax1.set_xlabel('Base rate of contamination')
+ax1.set_ylabel('P("Which are not contaminated?")')
+ax1.set_xticks(base_rates)
+ax1.set_xticklabels(['20%', '50%', '80%'])
+ax1.set_ylim(0, 1)
+ax1.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax1.legend(title='Goal', loc='upper left', frameon=False, fontsize=7)
+ax1.spines[['top', 'right']].set_visible(False)
+ax1.set_title('A. Experiment 1: Goal × Base Rate', fontsize=11, fontweight='bold', loc='left')
+
+# Panel B: Experiment 2
+x = np.array([0, 1])
+width = 0.35
+find_uncont_vals = [predictions[('singleton', 'find_uncont')], predictions[('set_id', 'find_uncont')]]
+find_cont_vals = [predictions[('singleton', 'find_cont')], predictions[('set_id', 'find_cont')]]
+
+ax2.bar(x - width/2, find_uncont_vals, width, label='Find uncontaminated', color=COLORS['find_uncont'])
+ax2.bar(x + width/2, find_cont_vals, width, label='Find contaminated', color=COLORS['find_cont'])
+ax2.set_xlabel('Decision structure')
+ax2.set_ylabel('P("Which are not contaminated?")')
+ax2.set_xticks(x)
+ax2.set_xticklabels(['Singleton', 'Set ID'])
+ax2.set_ylim(0, 1)
+ax2.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+ax2.legend(title='Goal', loc='upper right', frameon=False, fontsize=7)
+ax2.spines[['top', 'right']].set_visible(False)
+ax2.set_title('B. Experiment 2: Goal × Decision', fontsize=11, fontweight='bold', loc='left')
+
+plt.tight_layout()
+plt.savefig(SCRIPT_DIR / 'model_predictions_omni.pdf', format='pdf', bbox_inches='tight')
+plt.show()
+```
+
+## Model Comparison: Experiment 1
+
+```{python}
+import pandas as pd
+from IPython.display import Markdown
+
+# Use pre-fitted results from fit.py
+exp1 = results['exp1']
+
+# Build model comparison dataframe (Null vs RSA only for Exp 1)
+exp1_models = pd.DataFrame({
+    'Model': ['Null', 'Full RSA'],
+    'k': [0, 2],
+    'LL': [-exp1['null']['nll'], -exp1['rsa']['nll']],
+    'AIC': [exp1['null']['aic'], exp1['rsa']['aic']],
+})
+
+# Find best (lowest) AIC
+best_aic_idx = exp1_models['AIC'].idxmin()
+
+# Format with bold for best
+def format_row(row, idx, best_idx):
+    if idx == best_idx:
+        return f"| **{row['Model']}** | {row['k']} | {row['LL']:.1f} | **{row['AIC']:.1f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['LL']:.1f} | {row['AIC']:.1f} |"
+
+table_md = "| Model | k | LL | AIC |\n|:------|--:|---:|----:|\n"
+for idx, row in exp1_models.iterrows():
+    table_md += format_row(row, idx, best_aic_idx) + "\n"
+
+# Show fitted parameters
+rsa_params = f"RSA fitted parameters: α={exp1['rsa']['alpha']:.1f}, γ={exp1['rsa']['gamma']:.2f}"
+display(Markdown(f"**Experiment 1 Model Comparison**\n\n{table_md}\n\n{rsa_params}"))
+```
+
+## Model Comparison: Experiment 2
+
+```{python}
+# Use pre-fitted results from fit.py
+exp2 = results['exp2']
+
+# Build model comparison dataframe (each model fit separately)
+exp2_models = pd.DataFrame({
+    'Model': ['Null', 'Goal-matching', 'Exhaustive-only RSA', 'Mention-some only RSA', 'Full RSA'],
+    'k': [0, 2, 2, 2, 2],
+    'LL': [-exp2['null']['nll'], -exp2['goal_matching']['nll'],
+           -exp2['exhaustive_only']['nll'], -exp2['mention_some_only']['nll'],
+           -exp2['full_rsa']['nll']],
+    'AIC': [exp2['null']['aic'], exp2['goal_matching']['aic'],
+            exp2['exhaustive_only']['aic'], exp2['mention_some_only']['aic'],
+            exp2['full_rsa']['aic']],
+})
+
+# Find best (lowest) AIC
+best_aic_idx2 = exp2_models['AIC'].idxmin()
+
+# Format with bold for best
+def format_exp2_row(row, idx):
+    if idx == best_aic_idx2:
+        return f"| **{row['Model']}** | {row['k']} | {row['LL']:.1f} | **{row['AIC']:.1f}** |"
+    return f"| {row['Model']} | {row['k']} | {row['LL']:.1f} | {row['AIC']:.1f} |"
+
+table_md2 = "| Model | k | LL | AIC |\n|:------|--:|---:|----:|\n"
+for idx, row in exp2_models.iterrows():
+    table_md2 += format_exp2_row(row, idx) + "\n"
+
+# Show fitted parameters for each RSA model
+param_info = f"""
+**Fitted parameters (each model fit separately):**
+- Exhaustive-only RSA: α={exp2['exhaustive_only']['alpha']:.1f}, γ={exp2['exhaustive_only']['gamma']:.2f}
+- Mention-some only RSA: α={exp2['mention_some_only']['alpha']:.1f}, γ={exp2['mention_some_only']['gamma']:.2f}
+- Full RSA: α={exp2['full_rsa']['alpha']:.1f}, γ={exp2['full_rsa']['gamma']:.2f}
+"""
+
+display(Markdown(f"**Experiment 2 Model Comparison**\n\n{table_md2}\n{param_info}"))
+
+# Compute predicted effects for Full RSA
+preds = exp2['full_rsa']['predictions']
+singleton_effect = preds['singleton']['find_uncont'] - preds['singleton']['find_cont']
+setid_effect = preds['set_id']['find_uncont'] - preds['set_id']['find_cont']
+print(f"\nFull RSA predictions:")
+print(f"  Singleton effect: {singleton_effect:.0%}")
+print(f"  Set-ID effect: {setid_effect:.0%}")
+print(f"  Interaction: {singleton_effect - setid_effect:.0%}")
+
+# Observed data effects
+obs_singleton = EXP2_DATA['singleton']['find_uncont'][0]/EXP2_DATA['singleton']['find_uncont'][1] - \
+                EXP2_DATA['singleton']['find_cont'][0]/EXP2_DATA['singleton']['find_cont'][1]
+obs_setid = EXP2_DATA['set_id']['find_uncont'][0]/EXP2_DATA['set_id']['find_uncont'][1] - \
+            EXP2_DATA['set_id']['find_cont'][0]/EXP2_DATA['set_id']['find_cont'][1]
+print(f"\nObserved data:")
+print(f"  Singleton effect: {obs_singleton:.0%}")
+print(f"  Set-ID effect: {obs_setid:.0%}")
+print(f"  Interaction: {obs_singleton - obs_setid:.0%}")
+```
+
+## Summary
+
+```{python}
+# Create summary table comparing AIC differences
+summary_data = pd.DataFrame({
+    'Experiment': ['Exp 1', 'Exp 1', 'Exp 2', 'Exp 2'],
+    'Comparison': ['Null vs Goal-matching', 'Goal-matching vs RSA',
+                   'Null vs Goal-matching', 'Goal-matching vs RSA'],
+    'ΔAIC': [
+        exp1['null']['aic'] - exp1['goal_matching']['aic'],
+        exp1['goal_matching']['aic'] - exp1['rsa']['aic'],
+        exp2['null']['aic'] - exp2['goal_matching']['aic'],
+        exp2['goal_matching']['aic'] - exp2['full_rsa']['aic']
+    ]
+})
+
+summary_md = "| Experiment | Comparison | ΔAIC |\n|:-----------|:-----------|-----:|\n"
+for _, row in summary_data.iterrows():
+    delta = row['ΔAIC']
+    summary_md += f"| {row['Experiment']} | {row['Comparison']} | {delta:+.1f} |\n"
+
+display(Markdown(f"**Model Comparison Summary** (positive ΔAIC favors second model)\n\n{summary_md}"))
+```
+
+```{python}
+# Save all results to JSON
+import json
+
+# Convert results to JSON-serializable format
+def serialize_results(res):
+    """Convert numpy types to Python types for JSON serialization."""
+    if isinstance(res, dict):
+        return {k: serialize_results(v) for k, v in res.items()}
+    elif isinstance(res, (np.floating, np.integer)):
+        return float(res)
+    elif isinstance(res, np.ndarray):
+        return res.tolist()
+    return res
+
+output = serialize_results(results)
+
+with open(SCRIPT_DIR / 'model_comparison_results.json', 'w') as f:
+    json.dump(output, f, indent=2)
+print(f"\nResults saved to {SCRIPT_DIR / 'model_comparison_results.json'}")
+```

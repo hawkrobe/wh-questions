@@ -69,8 +69,8 @@ for br in base_rates:
 fig, ax = plt.subplots(figsize=(5, 4))
 
 # Line plot matching empirical figure style
-ax.plot(base_rates, pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=8, label='Find uncontaminated')
-ax.plot(base_rates, pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=8, label='Find contaminated')
+ax.plot(base_rates, pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=7, label='Find uncontaminated')
+ax.plot(base_rates, pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=7, label='Find contaminated')
 
 ax.set_xlabel('Base rate of contamination')
 ax.set_ylabel('P("Which are uncontaminated?")')
@@ -154,15 +154,15 @@ for br in base_rates:
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
 
 # Panel A: Experiment 1
-ax1.plot(base_rates, exp1_pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=8, label='Find uncontaminated')
-ax1.plot(base_rates, exp1_pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=8, label='Find contaminated')
+ax1.plot(base_rates, exp1_pred_uncont, 'o-', color=COLORS['find_uncont'], linewidth=2, markersize=7, label='Find uncontaminated')
+ax1.plot(base_rates, exp1_pred_cont, 'o-', color=COLORS['find_cont'], linewidth=2, markersize=7, label='Find contaminated')
 ax1.set_xlabel('Base rate of contamination')
-ax1.set_ylabel('P("Which are uncontaminated?")')
+ax1.set_ylabel('P("Which are not contaminated?")')
 ax1.set_xticks(base_rates)
 ax1.set_xticklabels(['20%', '50%', '80%'])
 ax1.set_ylim(0, 1)
 ax1.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-ax1.legend(title='Goal', loc='upper left', frameon=False, fontsize=9)
+ax1.legend(title='Goal', loc='upper left', frameon=False, fontsize=7)
 ax1.spines[['top', 'right']].set_visible(False)
 ax1.set_title('A. Experiment 1: Goal × Base Rate', fontsize=11, fontweight='bold', loc='left')
 
@@ -175,12 +175,12 @@ find_cont_vals = [predictions[('singleton', 'find_cont')], predictions[('set_id'
 ax2.bar(x - width/2, find_uncont_vals, width, label='Find uncontaminated', color=COLORS['find_uncont'])
 ax2.bar(x + width/2, find_cont_vals, width, label='Find contaminated', color=COLORS['find_cont'])
 ax2.set_xlabel('Decision structure')
-ax2.set_ylabel('P("Which are uncontaminated?")')
+ax2.set_ylabel('P("Which are not contaminated?")')
 ax2.set_xticks(x)
 ax2.set_xticklabels(['Singleton', 'Set ID'])
 ax2.set_ylim(0, 1)
 ax2.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
-ax2.legend(title='Goal', loc='upper right', frameon=False, fontsize=9)
+ax2.legend(title='Goal', loc='upper right', frameon=False, fontsize=7)
 ax2.spines[['top', 'right']].set_visible(False)
 ax2.set_title('B. Experiment 2: Goal × Decision', fontsize=11, fontweight='bold', loc='left')
 
