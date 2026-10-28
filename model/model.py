@@ -245,7 +245,7 @@ class Model:
 
         # Iterate over all compositions (KL naturally penalizes unlikely ones)
         for comp in self._all_compositions(know):
-            m = comp.total
+            m = comp.total # total number of mentioned vials
 
             # Multinomial coefficient for this composition
             mult = (binom[know.n_cont, comp.m_cont] *
